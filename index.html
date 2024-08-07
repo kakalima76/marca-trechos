@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Vue.js with Google Maps</title>
+		<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+		<link rel="stylesheet" href="styles.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+		<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<div id="map"></div>
+			<div class="popup container mt-5" :class="{show: isPopupVisible}">
+				<div class="form-group">
+					<label for="address">Endereço</label>
+					<input type="text" class="form-control" id="address" placeholder="Digite um endereço">
+				</div>
+				<div class="form-group">
+					<label for="selectGerencia">Tipo</label>
+					<select class="form-control" id="selectTipo" v-model="tipo" @change="updateLocais">
+						<option value="" disabled selected>Selecione...</option>
+						<option v-for="tipo in tipos" :key="tipo" :value="tipo">{{ tipo }}</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label for="selectGerencia">Local da Partida</label>
+					<select class="form-control" id="selectLocal" v-model="local" :disabled="!tipo">
+						<option value="" disabled selected>Selecione...</option>
+						<option v-for="item in locais" :key="item.nome" :value="item.nome">{{ item.nome }}</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label for="selectGerencia">Gerência</label>
+					<select class="form-control" id="selectGerencia" v-model="gerencia" @change="updateRoteiros">
+						<option value="" disabled selected>Selecione...</option>
+						<option v-for="gerenciaItem in gerencias" :key="gerenciaItem" :value="gerenciaItem">{{ gerenciaItem }}</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label for="selectRoteiro">Roteiro</label>
+					<select class="form-control" id="selectRoteiro" v-model="roteiro" :disabled="!gerencia">
+						<option value="" disabled selected>Selecione...</option>
+						<option v-for="roteiroItem in filteredRoteiros" :key="roteiroItem" :value="roteiroItem">{{ roteiroItem }}</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label for="selectLado">Lado</label>
+					<select class="form-control" id="selectLado" v-model="lado">
+						<option value="" disabled selected>Selecione...</option>
+						<option value="D">Lado Direito</option>
+						<option value="E">Lado Esquerdo</option>
+						<option value="ED">Ambos</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<div class="form-check" style="display: flex; align-items: center;">
+						<input class="form-check-input" type="radio" name="opcao" value="deslocamento" id="radioDeslocamento" v-model="opcao">
+						<label class="form-check-label" for="radioDeslocamento" id="first" style="flex: 1; text-align: left;">
+						Deslocamento
+						</label>
+						<div style="background-color: blue; height: 20px; flex: 1;"></div>
+					</div>
+					<div class="form-check" style="display: flex; align-items: center;">
+						<input class="form-check-input" type="radio" name="opcao" value="coleta" id="radioColeta" v-model="opcao">
+						<label class="form-check-label" for="radioColeta" id="second" style="flex: 1; text-align: left;">
+						Coleta
+						</label>
+						<div style="background-color: red; height: 20px; flex: 1;"></div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="distanceDeslocamento">Deslocamento</label>
+					<input type="text" class="form-control" id="distanceDeslocamento" v-model="deslocamento"  disabled>
+				</div>
+				<div class="form-group">
+					<label for="distanceColeta">Coleta</label>
+					<input type="text" class="form-control" id="distanceColeta" v-model="coleta"  disabled>
+				</div>
+				<div class="form-group">
+					<label for="distanceTotal">Total</label>
+					<input type="text" class="form-control" id="distanceTotal" v-model="distanciaTotal"  disabled>
+				</div>
+				<div class="form-group row">
+					<div class="col">
+						<button class="btn btn-primary btn-block" @click="salvar">Confirmar</button>
+					</div>
+					<div class="col">
+						<button class="btn btn-secondary btn-block" id="btnExcluir" @click="excluir">Excluir</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+			function initMap() {
+			  app.initMap();
+			}
+			
+			const app = new Vue({
+			  el: '#app',
+			  data: {
+          map: null,
+			    center: { lat: -22.9068, lng: -43.1729 },
+			    zoom: 16,
+			    gerencias: [],
+			    roteiros: [],
+			    tipos: [],
+			    listaLocais: [],
+			    locais: [],
+			    polilinhas: [],
+			    gerencia: null,
+			    roteiro: null,
+			    lado: null,
+			    opcao: null,
+			    isPopupVisible: false,
+			    pontos: [],
+			    coordenadas: [],
+			    deslocamento: 0,
+			    coleta: 0,
+			    distancia: 0,
+			    distanciaTotal: 0,
+			    inicio: null,
+			    fim: null,
+			    polilinha: null,
+			    tipo: null,
+			    local: null,
+			  },
+			  mounted() {
+			    this.loadGerencias();
+			    this.loadLocais();
+			  },
+			  watch: {
+			    polilinhas: function(newVal, oldVal) {
+            this.renderPolylines();
+			    }
+			  },
+			  methods: {
+			    initMap() {
+			      this.map = new google.maps.Map(document.getElementById('map'), {
+			        center: this.center,
+			        zoom: this.zoom,
+			        draggableCursor: 'default', // Altera o cursor de pan para uma seta
+			        disableDoubleClickZoom: true // Desabilita o zoom no duplo clique
+			      });
+			
+			      console.log("mapa iniciado");
+			
+			      const button = document.createElement('button');
+			      button.innerHTML = '<i class="fas fa-eye"></i>';
+			      button.classList.add('custom-map-control-button');
+			      button.addEventListener('click', this.togglePopup);
+			
+			      this.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(button);
+			
+			      // Autocomplete Address
+			      const addressInput = document.getElementById('address');
+			      const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+			        componentRestrictions: { country: 'br' },
+			        fields: ['geometry', 'name'],
+			        types: ['address'],
+			      });
+			      autocomplete.setBounds(
+			        new google.maps.LatLngBounds(
+			          new google.maps.LatLng(-23.0838, -43.7951),
+			          new google.maps.LatLng(-22.7428, -43.1036),
+			        ),
+			      );
+			      autocomplete.bindTo('bounds', this.map);
+			
+			      autocomplete.addListener('place_changed', () => {
+			        const place = autocomplete.getPlace();
+			        if (!place.geometry) {
+			          console.log("No details available for input: '" + place.name + "'");
+			          return;
+			        }
+			
+			        if (place.geometry.viewport) {
+			          this.map.fitBounds(place.geometry.viewport);
+			        } else {
+			          this.map.setCenter(place.geometry.location);
+			          this.map.setZoom(17);
+			        }
+			      });
+			
+			      // Add double click event listener
+			      this.map.addListener('dblclick', (e) => {
+			        this.duploCliqueMapa(e.latLng);
+			      });
+			
+			      
+			    },
+			    closePopup() {
+			      this.isPopupVisible = false;
+			    },
+			    togglePopup() {
+			      this.isPopupVisible = !this.isPopupVisible;
+			      const button = document.querySelector('.custom-map-control-button i');
+			      button.className = this.isPopupVisible ? 'fas fa-eye-slash' : 'fas fa-eye';
+			    },
+			    loadGerencias() {
+			      fetch('data.json')
+			        .then(response => response.json())
+			        .then(data => {
+			          const gerencias = new Set();
+			          data.forEach(item => {
+			            gerencias.add(item.gerencia);
+			          });
+			          this.gerencias = Array.from(gerencias);
+			          this.roteiros = data;
+			        });
+			    },
+			    loadLocais() {
+			      fetch('locais.json')
+			        .then(response => response.json())
+			        .then(data => {
+			          const tipos = new Set();
+			          const locais = new Set();
+			          const listaLocais = new Set();
+			          data.forEach(item => {
+			            locais.add({ nome: item.nome, tipo: item.tipo });
+			            listaLocais.add(item.local);
+			            tipos.add(item.tipo);
+			          });
+			
+			          this.locais = Array.from(locais);
+			          this.tipos = Array.from(tipos);
+			          this.listaLocais = Array.from(listaLocais);
+			        });
+			    },
+			    updateRoteiros() {
+			      this.roteiro = ''; // Reset the selected roteiro
+			    },
+			    updateLocais() {
+			      this.local = ''; // Reset the selected roteiro
+			    },
+			    salvar() {
+			      console.log('Gerência:', this.gerencia);
+			      console.log('Roteiro:', this.roteiro);
+			      console.log('Lado:', this.lado);
+			      console.log('Opção:', this.opcao);
+			    },
+			    excluir() {
+			      console.log('Excluído os valores:');
+			      console.log('Gerência:', this.gerencia);
+			      console.log('Roteiro:', this.roteiro);
+			      console.log('Lado:', this.lado);
+			      console.log('Opção:', this.opcao);
+			
+			      this.gerencia = '';
+			      this.roteiro = '';
+			      this.lado = '';
+			      this.opcao = '';
+			    },
+			    testarDadosDoFormulario(){
+			      return (!this.gerencia || !this.roteiro || !this.lado || !this.opcao) ? false : true;
+			    },
+			    duploCliqueMapa(latLng){
+			
+			      if(!this.testarDadosDoFormulario()){
+			        alert('Preencha os campos corretamente!');
+			        return;
+			      }
+			
+			
+			      this.adicionarPonto(latLng);
+			      this.pegarTrecho();
+			    },
+			    adicionarPonto(latLng) {
+			
+			      const lat = latLng.lat();
+			      const lng = latLng.lng();
+			      this.pontos.push({ lat, lng });
+			      if(this.pontos.length > 2){
+			        this.pontos.shift();
+			      }
+			    },
+			    criarQueryParams(){
+			      if(this.pontos.length < 2){
+			        return;
+			      }
+			
+			      const origin = `${this.pontos[0].lat},${this.pontos[0].lng}`;
+			      const destination = `${this.pontos[1].lat},${this.pontos[1].lng}`;
+			      const queryParams = `origin=${origin}&destination=${destination}`
+			      return queryParams;
+			    }, 
+			    pegarTrecho(){
+			      if(this.pontos.length < 2){
+			        return;
+			      }
+			      const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
+			      axios.get(url)
+			      .then(response => {
+			        this.extrairDadosDoPayload(response.data);
+			      })
+			      .catch(error => console.log(error));
+			    },
+			    extrairDadosDoPayload(data){
+			      const {routes} = data;
+			      const { legs, overview_polyline } = routes[0];
+			      const { distance, end_address, start_address } = legs[0];
+			      const { points } = overview_polyline;
+			      const { value } = distance;
+			
+			      if(this.opcao == 'deslocamento'){
+			        this.deslocamento = this.deslocamento + value;
+			      }
+			
+			      if(this.opcao == 'coleta'){
+			         this.coleta = this.coleta + value;
+			       }
+			
+			      this.distanciaTotal = this.deslocamento + this.coleta;
+			      this.distancia = value;
+			
+			      this.inicio = start_address;
+			      this.fim = end_address;
+			      this.polilinha = this.decodificarOverwiewPolyline(points);
+			
+			      const obj = {
+			        inicio: this.inicio,
+			        fim: this.fim,
+			        polilinha: this.polilinha,
+			        distancia: this.distancia,
+			        gerecia: this.gerencia,
+			        roteiro: this.roteiro,
+			        lado: this.lado,
+			        opcao: this.opcao
+			      }
+			      
+			      this.polilinhas.push(obj);		
+			      
+			    },
+			    decodificarOverwiewPolyline(points){
+			      return google.maps.geometry.encoding.decodePath(points);
+			    },
+          renderPolylines() {
+              // Remover todas as polylines do mapa
+              this.polilinhas.forEach(polylineObj => {
+                if (polylineObj.polyline) {
+                  polylineObj.polyline.setMap(null);
+                }
+              });
+
+              // Adicionar novas polylines ao mapa
+              this.polilinhas.forEach(polylineObj => {
+                const polylineOptions = {
+                  path: polylineObj.polilinha,
+                  geodesic: true,
+                  strokeColor: polylineObj.opcao === 'deslocamento' ? 'blue' : 'red',
+                  strokeOpacity: 1.0,
+                  strokeWeight: polylineObj.opcao === 'deslocamento' ? 4 : 5,
+                  icons: polylineObj.opcao === 'deslocamento' ? [{
+                    icon: {
+                      path: 'M 0,-1 0,1',
+                      strokeOpacity: 1,
+                      strokeColor: 'white',
+                      scale: 4
+                    },
+                    offset: '0',
+                    repeat: '20px'
+                  }] : []
+                };
+                
+                const polyline = new google.maps.Polyline(polylineOptions);
+                polyline.setMap(this.map);
+                polylineObj.polyline = polyline;
+              });
+            }
+			  },
+			  computed: {
+			    filteredRoteiros() {
+			      return this.roteiros
+			        .filter(item => item.gerencia === this.gerencia)
+			        .map(item => item.roteiro);
+			    },
+			    filteredLocais() {
+			      return this.locais
+			        .filter(item => item.tipo === this.tipo)
+			        .map(item => item);
+			    }
+			  }
+			});
+		</script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtTyl_0cTzYe39SIdOmWSJ0rI-H3F_Os&callback=initMap&libraries=places,geometry" async defer></script>
+	</body>
+</html>

@@ -1,0 +1,65 @@
+#map {
+  height: 100vh; /* Altura igual à altura da viewport */
+  width: 100vw;  /* Largura igual à largura da viewport */
+  position: absolute; /* Garantir que o mapa ocupe toda a tela */
+  top: 0;
+  left: 0;
+}
+
+ .popup {
+ display: none;
+ position: absolute;
+ top: 10px;
+ left: 10px;
+ width: 300px;
+ background: #fff;
+ box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+ padding: 20px;
+ border-radius: 5px;
+ z-index: 10;
+ max-height: 80vh; /* Define a altura máxima da div */
+ overflow-y: auto;  /* Adiciona a rolagem vertical */
+ }
+ .show {
+ display: block !important;
+ }
+ .custom-map-control-button {
+ background-color: #d4f7d4;
+ border: none;
+ outline: none;
+ width: 40px;
+ height: 40px;
+ border-radius: 2px;
+ box-shadow: 0 2px 6px rgba(0,0,0,.3);
+ cursor: pointer;
+ margin-right: 10px;
+ margin-top: 10px;
+ }
+ .custom-map-control-button:hover {
+ background-color: #ebebeb;
+ }
+
+.popup {
+  width: 75%; /* Padrão para dispositivos pequenos */
+  margin: 0 auto; /* Centraliza o popup horizontalmente */
+  opacity: 0; /* Inicia com opacidade 0 */
+  transition: opacity 2s ease-in-out; /* Transição para opacidade */
+}
+
+.popup.show {
+  opacity: 1; /* Quando a classe show é adicionada, a opacidade é 1 */
+}
+
+@media (min-width: 576px) {
+  /* Para dispositivos médios */
+  .popup {
+    width: 50%;
+  }
+}
+
+@media (min-width: 992px) {
+  /* Para dispositivos grandes */
+  .popup {
+    width: 30%;
+  }
+}
