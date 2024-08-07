@@ -50,6 +50,16 @@
   opacity: 1; /* Quando a classe show é adicionada, a opacidade é 1 */
 }
 
+.map-marker-label {
+  background-color: black; /* Fundo preto */
+  color: white; /* Texto branco */
+  border: 1px solid white; /* Borda branca para melhor visibilidade */
+  padding: 2px 5px;
+  position: absolute;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+}
+
 @media (min-width: 576px) {
   /* Para dispositivos médios */
   .popup {
