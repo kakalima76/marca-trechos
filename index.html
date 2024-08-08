@@ -7,6 +7,7 @@
 		<link rel="stylesheet" href="styles.css">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 		<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 			
 		
 	</head>
@@ -220,245 +221,6 @@
 
 
 					},
-					closePopup() {
-						this.isPopupVisible = false;
-					},
-					togglePopup() {
-						this.isPopupVisible = !this.isPopupVisible;
-						const button = document.querySelector('.custom-map-control-button i');
-						button.className = this.isPopupVisible ? 'fas fa-eye-slash' : 'fas fa-eye';
-					},
-					loadGerencias() {
-						fetch('data.json')
-							.then(response => response.json())
-							.then(data => {
-								const gerencias = new Set();
-								data.forEach(item => {
-									gerencias.add(item.gerencia);
-								});
-								this.gerencias = Array.from(gerencias);
-								this.roteiros = data;
-							});
-					},
-					loadLocais() {
-						fetch('locais.json')
-							.then(response => response.json())
-							.then(data => {
-								const tipos = new Set();
-								const locais = new Set();
-								const listaLocais = new Set();
-								data.forEach(item => {
-									locais.add({
-										nome: item.nome,
-										tipo: item.tipo
-									});
-									listaLocais.add(item);
-									tipos.add(item.tipo);
-								});
-
-								this.locais = Array.from(locais);
-								this.tipos = Array.from(tipos);
-								this.listaLocais = Array.from(listaLocais);
-							});
-					},
-					updateRoteiros() {
-						this.roteiro = '';
-					},
-					updateLocais() {
-						this.local = '';
-					},
-					salvar() {
-						console.log('Gerência:', this.gerencia);
-						console.log('Roteiro:', this.roteiro);
-						console.log('Lado:', this.lado);
-						console.log('Opção:', this.opcao);
-					},
-					excluir() {
-						console.log('Excluído os valores:');
-						console.log('Gerência:', this.gerencia);
-						console.log('Roteiro:', this.roteiro);
-						console.log('Lado:', this.lado);
-						console.log('Opção:', this.opcao);
-					},
-					testarDadosDoFormulario() {
-						return (!this.gerencia || !this.roteiro || !this.lado || !this.opcao) ? false : true;
-					},
-					duploCliqueMapa(latLng) {
-
-						if (!this.testarDadosDoFormulario()) {
-							alert('Preencha os campos corretamente!');
-							return;
-						}
-
-
-						this.adicionarPonto(latLng);
-						this.pegarTrecho();
-					},
-					adicionarPonto(latLng) {
-
-						if(this.pontos[0] === this.pontos[1]){
-							this.pontos = []
-						}
-
-						const lat = latLng.lat();
-						const lng = latLng.lng();
-						this.pontos.push({
-							lat,
-							lng
-						});
-						if (this.pontos.length > 2) {
-							this.pontos.shift();
-						}
-					},
-					criarQueryParams() {
-						if (this.pontos.length < 2) {
-							return;
-						}
-
-						const origin = `${this.pontos[0].lat},${this.pontos[0].lng}`;
-						const destination = `${this.pontos[1].lat},${this.pontos[1].lng}`;
-						const queryParams = `origin=${origin}&destination=${destination}`
-						return queryParams;
-					},
-					pegarTrecho() {
-						if (this.pontos.length < 2) {
-							return;
-						}
-						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
-						axios.get(url)
-							.then(response => {
-								this.extrairDadosDoPayload(response.data);
-							})
-							.catch(error => console.log(error));
-					},
-					extrairDadosDoPayload(data) {
-						const {
-							routes
-						} = data;
-						const {
-							legs,
-							overview_polyline
-						} = routes[0];
-						const {
-							distance,
-							end_address,
-							start_address
-						} = legs[0];
-						const {
-							points
-						} = overview_polyline;
-						const {
-							value
-						} = distance;
-
-						if (this.opcao == 'deslocamento') {
-							this.deslocamento = this.deslocamento + value;
-						}
-
-						if (this.opcao == 'coleta') {
-							this.coleta = this.coleta + value;
-						}
-
-						this.distanciaTotal = this.deslocamento + this.coleta;
-						this.distancia = value;
-
-						this.inicio = start_address;
-						this.fim = end_address;
-						this.polilinha = this.decodificarOverwiewPolyline(points);
-
-						const obj = {
-							inicio: this.inicio,
-							fim: this.fim,
-							polilinha: this.polilinha,
-							distancia: this.distancia,
-							gerecia: this.gerencia,
-							roteiro: this.roteiro,
-							lado: this.lado,
-							opcao: this.opcao,
-							uid: this.gerarUUIDv4(),
-						}
-
-						this.polilinhas.push(obj);
-
-					},
-					decodificarOverwiewPolyline(points) {
-						return google.maps.geometry.encoding.decodePath(points);
-					},
-					renderizarPolilinha() {
-						// Remover todas as polylines do mapa
-						this.polilinhas.forEach(polylineObj => {
-							if (polylineObj.polyline) {
-								polylineObj.polyline.setMap(null);
-							}
-						});
-
-						// Adicionar novas polylines ao mapa
-						this.polilinhas.forEach(polylineObj => {
-							const polylineOptions = {
-								path: polylineObj.polilinha,
-								geodesic: true,
-								strokeColor: polylineObj.opcao === 'deslocamento' ? 'blue' : 'red',
-								strokeOpacity: 1.0,
-								strokeWeight: polylineObj.opcao === 'deslocamento' ? 4 : 5,
-								icons: polylineObj.opcao === 'deslocamento' ? [{
-									icon: {
-										path: 'M 0,-1 0,1',
-										strokeOpacity: 1,
-										strokeColor: 'white',
-										scale: 4
-									},
-									offset: '0',
-									repeat: '20px'
-								}] : []
-							};
-
-							const polyline = new google.maps.Polyline(polylineOptions);
-
-							polyline.addListener('rightclick', (event) => {
-								const { uid } = polylineObj;
-								const contentDiv = document.createElement('div');
-								contentDiv.className = 'popup-content';
-
-								const button1 = document.createElement('button');
-								button1.textContent = 'Mudar para deslocamento';
-								button1.dataset.uid = uid;
-								button1.onclick = () => this.mudarParaDeslocamento(uid);
-
-								const button2 = document.createElement('button');
-								button2.textContent = 'Mudar para coleta';
-								button2.dataset.uid = uid;
-								button2.onclick = () => this.mudarParaColeta(uid);
-
-								const button3 = document.createElement('button');
-								button3.textContent = 'Remover trecho';
-								button3.dataset.uid = uid;
-								button3.onclick = () => this.removerTrecho(uid);
-
-								contentDiv.appendChild(button1);
-								contentDiv.appendChild(button2);
-								contentDiv.appendChild(button3);
-
-								const infowindow = new google.maps.InfoWindow({
-									content: contentDiv,
-									position: event.latLng
-								});
-
-								infowindow.open(this.map);
-								
-							});
-							polyline.setMap(this.map);
-							polylineObj.polyline = polyline;
-						});
-					},
-					criarPontoInicial() {
-						const local = this.listaLocais.filter(item => item.nome === this.local);
-						const {
-							latitude,
-							longitude,
-							nome
-						} = local[0];
-						this.adicionarMarcador(latitude, longitude, nome);
-					},
 					adicionarMarcador(lat, lng, label) {
 						const coords = new google.maps.LatLng(lat, lng);
 						this.adicionarPonto(coords);
@@ -510,11 +272,106 @@
 
 						this.map.setCenter(coords);
 						this.map.setZoom(17);
+					},
+					adicionarPonto(latLng) {
+						const lat = latLng.lat();
+						const lng = latLng.lng();
+						this.pontos.push({
+							lat,
+							lng
+						});
+						if (this.pontos.length > 2) {
+							this.pontos.shift();
+						}
+					},
+					closePopup() {
+						this.isPopupVisible = false;
+					},
+					criarPontoInicial() {
+						const local = this.listaLocais.filter(item => item.nome === this.local);
+						const {
+							latitude,
+							longitude,
+							nome
+						} = local[0];
+						this.adicionarMarcador(latitude, longitude, nome);
+					},
+					criarQueryParams() {
+						if (this.pontos.length < 2) {
+							return;
+						}
 
+						const origin = `${this.pontos[0].lat},${this.pontos[0].lng}`;
+						const destination = `${this.pontos[1].lat},${this.pontos[1].lng}`;
+						const queryParams = `origin=${origin}&destination=${destination}`
+						return queryParams;
+					},
+					decodificarOverwiewPolyline(points) {
+						return google.maps.geometry.encoding.decodePath(points);
+					},
+					duploCliqueMapa(latLng) {
+						this.testarDadosDoFormulario()
+						this.adicionarPonto(latLng);
+						this.pegarTrecho();
+					},
+					extrairDadosDoPayload(data) {
+						const {
+							routes
+						} = data;
+						const {
+							legs,
+							overview_polyline
+						} = routes[0];
+						const {
+							distance,
+							end_address,
+							start_address
+						} = legs[0];
+						const {
+							points
+						} = overview_polyline;
+						const {
+							value
+						} = distance;
+
+						if (this.opcao == 'deslocamento') {
+							this.deslocamento = this.deslocamento + value;
+						}
+
+						if (this.opcao == 'coleta') {
+							this.coleta = this.coleta + value;
+						}
+
+						this.distanciaTotal = this.deslocamento + this.coleta;
+						this.distancia = value;
+
+						this.inicio = start_address;
+						this.fim = end_address;
+						this.polilinha = this.decodificarOverwiewPolyline(points);
+
+						const obj = {
+							inicio: this.inicio,
+							fim: this.fim,
+							polilinha: this.polilinha,
+							distancia: this.distancia,
+							gerecia: this.gerencia,
+							roteiro: this.roteiro,
+							lado: this.lado,
+							opcao: this.opcao,
+							uid: this.gerarUUIDv4(),
+						}
+
+						this.polilinhas.push(obj);
+					},
+					excluir() {
+						console.log('Excluído os valores:');
+						console.log('Gerência:', this.gerencia);
+						console.log('Roteiro:', this.roteiro);
+						console.log('Lado:', this.lado);
+						console.log('Opção:', this.opcao);
 					},
 					formataMedidas(medida) {
 						const unidade = (medida === 0 ? 'metro' : (medida < 1000 ? 'metros' : 'km'));
-
 
 						if (medida > 1000) {
 							medida = (medida / 1000).toFixed(1);
@@ -548,21 +405,38 @@
 							hexBytes.slice(10, 16).join('')
 						);
 					},
-					mudarParaDeslocamento(uid) {
-						console.log('Mudar para deslocamento', uid);
-						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
-						const {distancia, opcao} = this.polilinhas[index];
+					loadGerencias() {
+						fetch('data.json')
+							.then(response => response.json())
+							.then(data => {
+								const gerencias = new Set();
+								data.forEach(item => {
+									gerencias.add(item.gerencia);
+								});
+								this.gerencias = Array.from(gerencias);
+								this.roteiros = data;
+							});
+					},
+					loadLocais() {
+						fetch('locais.json')
+							.then(response => response.json())
+							.then(data => {
+								const tipos = new Set();
+								const locais = new Set();
+								const listaLocais = new Set();
+								data.forEach(item => {
+									locais.add({
+										nome: item.nome,
+										tipo: item.tipo
+									});
+									listaLocais.add(item);
+									tipos.add(item.tipo);
+								});
 
-						if(opcao === "deslocamento"){
-							return;
-						}
-						
-						this.deslocamento +=distancia;
-						this.coleta -= distancia;
-
-						this.polilinhas = this.polilinhas.map((polyline, i) => 
-							i === index ? { ...polyline, opcao: "deslocamento" } : polyline
-						);
+								this.locais = Array.from(locais);
+								this.tipos = Array.from(tipos);
+								this.listaLocais = Array.from(listaLocais);
+							});
 					},
 					mudarParaColeta(uid) {
 						console.log('Mudar para coleta', uid);
@@ -572,7 +446,7 @@
 						if(opcao === "coleta"){
 							return;
 						}
-						
+
 						this.deslocamento -= distancia;
 						this.coleta += distancia;
 
@@ -580,10 +454,36 @@
 							i === index ? { ...polyline, opcao: "coleta" } : polyline
 						);
 					},
-					removerTrecho(uid) {
-
+					mudarParaDeslocamento(uid) {
+						console.log('Mudar para deslocamento', uid);
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
-						const { distancia, opcao} = this.polilinhas[index];
+						const {distancia, opcao} = this.polilinhas[index];
+
+						if(opcao === "deslocamento"){
+							return;
+						}
+
+						this.deslocamento +=distancia;
+						this.coleta -= distancia;
+
+						this.polilinhas = this.polilinhas.map((polyline, i) => 
+							i === index ? { ...polyline, opcao: "deslocamento" } : polyline
+						);
+					},
+					pegarTrecho() {
+						if (this.pontos.length < 2) {
+							return;
+						}
+						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
+						axios.get(url)
+							.then(response => {
+								this.extrairDadosDoPayload(response.data);
+							})
+							.catch(error => console.log(error));
+					},
+					removerTrecho(uid) {
+						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
+						const { distancia, opcao } = this.polilinhas[index];
 
 						if(index != this.polilinhas.length - 1){
 							alert("Operação negada");
@@ -600,16 +500,155 @@
 							this.deslocamento -= distancia;
 							this.distaciaTotal = this.distaciaTotal - distancia;
 						}
-						
-						
+
+
+						if( this.polilinhas.length > 0 ){
+							const { polilinha } = this.polilinhas[this.polilinhas.length - 1]
+							const coordenada = polilinha[polilinha.length - 1];
+							this.adicionarPonto(coordenada);
+						} else {
+							this.vetor = null;
+							this.tipo = null;
+							this.local = null;
+							this.pontos = [];
+						}
+
 						this.initMap();
 						this.map.setCenter({lat, lng});
 						this.map.setZoom(17);
-						this.pontos[1] = this.pontos[0];
-						
-					},
-					
 
+					},
+					renderizarPolilinha() {
+						// Remover todas as polylines do mapa
+						this.polilinhas.forEach(polylineObj => {
+							if (polylineObj.polyline) {
+								polylineObj.polyline.setMap(null);
+							}
+						});
+
+						// Adicionar novas polilines ao mapa
+						this.polilinhas.forEach((polylineObj, index) => {
+							const polylineOptions = {
+								path: polylineObj.polilinha,
+								geodesic: true,
+								strokeColor: polylineObj.opcao === 'deslocamento' ? 'blue' : 'red',
+								strokeOpacity: 1.0,
+								strokeWeight: polylineObj.opcao === 'deslocamento' ? 4 : 5,
+								icons: polylineObj.opcao === 'deslocamento' ? [{
+									icon: {
+										path: 'M 0,-1 0,1',
+										strokeOpacity: 1,
+										strokeColor: 'white',
+										scale: 4
+									},
+									offset: '0',
+									repeat: '20px'
+								}] : []
+							};
+
+							const polyline = new google.maps.Polyline(polylineOptions);
+
+							polyline.addListener('rightclick', (event) => {
+								const { uid } = polylineObj;
+								const contentDiv = document.createElement('div');
+								contentDiv.className = 'popup-content';
+
+								const button1 = document.createElement('button');
+								button1.textContent = 'Mudar para deslocamento';
+								button1.dataset.uid = uid;
+								button1.onclick = () => this.mudarParaDeslocamento(uid);
+
+								const button2 = document.createElement('button');
+								button2.textContent = 'Mudar para coleta';
+								button2.dataset.uid = uid;
+								button2.onclick = () => this.mudarParaColeta(uid);
+
+								const button3 = document.createElement('button');
+								button3.textContent = 'Remover trecho';
+								button3.dataset.uid = uid;
+								button3.onclick = () => this.removerTrecho(uid);
+
+								contentDiv.appendChild(button1);
+								contentDiv.appendChild(button2);
+								contentDiv.appendChild(button3);
+
+								const infowindow = new google.maps.InfoWindow({
+									content: contentDiv,
+									position: event.latLng
+								});
+
+								infowindow.open(this.map);
+
+							});
+							polyline.setMap(this.map);
+							polylineObj.polyline = polyline;
+						});
+					},
+					salvar() {
+						console.log('Gerência:', this.gerencia);
+						console.log('Roteiro:', this.roteiro);
+						console.log('Lado:', this.lado);
+						console.log('Opção:', this.opcao);
+					},
+					testarDadosDoFormulario() {
+
+						async function mostrarAvisoCampoAusente(campo) {
+							Swal.fire("Oops!", `Preencha o campo ${campo}`, "error")
+						}
+
+						if (!this.gerencia){
+							mostrarAvisoCampoAusente('gerência');
+							this.pontos = [];
+							this.polilinhas = [];
+							return false
+						}else if (!this.roteiro){
+							mostrarAvisoCampoAusente('roteiro');
+							this.pontos = [];
+							this.polilinhas = [];
+							return false
+						}else if (!this.lado){
+							mostrarAvisoCampoAusente('lado');
+							this.pontos = [];
+							this.polilinhas = [];
+							return false
+						}else if(!this.opcao){
+							mostrarAvisoCampoAusente('opção');
+							this.pontos = [];
+							this.polilinhas = [];
+							return false
+						}else if(!this.vetor){
+							mostrarAvisoCampoAusente('partida');
+							this.pontos = [];
+							this.polilinhas = [];
+							return false
+						}else if(!this.tipo){
+							mostrarAvisoCampoAusente('tipo');
+							this.pontos = [];
+							this.polilinhas = [];
+							return false
+						}else if(!this.local){
+							mostrarAvisoCampoAusente('local');
+							this.pontos = [];
+							this.polilinhas = [];
+							return false
+						}else{
+							return true
+						}
+
+						return true;
+
+					},
+					togglePopup() {
+						this.isPopupVisible = !this.isPopupVisible;
+						const button = document.querySelector('.custom-map-control-button i');
+						button.className = this.isPopupVisible ? 'fas fa-eye-slash' : 'fas fa-eye';
+					},
+					updateLocais() {
+						this.local = ''; // Reset the selected roteiro
+					},
+					updateRoteiros() {
+						this.roteiro = ''; // Reset the selected roteiro
+					},
 				},
 				computed: {
 					filteredRoteiros() {
