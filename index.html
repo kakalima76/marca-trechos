@@ -561,7 +561,7 @@
 								this.listaLocais = Array.from(listaLocais);
 							});
 					},
-					mudarParaColeta(uid) {
+					mudarParaColeta(uid, infowindow) {
 						console.log('Mudar para coleta', uid);
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
 						const {distancia, opcao} = this.polilinhas[index];
@@ -576,8 +576,10 @@
 						this.polilinhas = this.polilinhas.map((polyline, i) => 
 							i === index ? { ...polyline, opcao: "coleta" } : polyline
 						);
+
+						infowindow.close();
 					},
-					mudarParaDeslocamento(uid) {
+					mudarParaDeslocamento(uid, infowindow) {
 						console.log('Mudar para deslocamento', uid);
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
 						const {distancia, opcao} = this.polilinhas[index];
@@ -592,6 +594,8 @@
 						this.polilinhas = this.polilinhas.map((polyline, i) => 
 							i === index ? { ...polyline, opcao: "deslocamento" } : polyline
 						);
+
+						infowindow.close();
 					},
 					pegarTrecho() {
 						if (this.pontos.length < 2) {
@@ -607,41 +611,47 @@
 							})
 							.catch(error => console.log(error));
 					},
-					removerTrecho(uid) {
-						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
-						const { distancia, opcao } = this.polilinhas[index];
+					removerTrecho(uid, poly, infowindow) {
+						console.log(uid, poly, infowindow);
 
-						if(index != this.polilinhas.length - 1){
-							alert("Operação negada");
+						/*
+							Remover a polilinha da lista de polilinhas e do mapa.
+							S;o será permitido remover a última linha da lista de polilinhas.
+						*/
+
+						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
+						const len = this.polilinhas.length;
+
+						if(index !== len - 1){
+							alert("Não é possível remover o trecho");
 							return;
 						}
 
-						this.initMap();		
-						
-						this.polilinhas = this.polilinhas.filter(x => x.uid !== uid).sort((a, b) => a.id - b.id);
-					
-						if(opcao === "coleta"){
-							this.coleta -= distancia;
-							this.distaciaTotal = this.distaciaTotal - distancia;
+						poly.setMap(null);
+						this.polilinhas.pop()
+
+						/*
+							Agora será necessário atribuir o ultimo ponto da polilinha a última coordenada da nova última polilinha.
+							Se houver ainda auma polilinha, deve-se pegar o ultimo ponto dessa polilinha para setar as posições do this.pontos.
+							Caso não, deve ser utilizada a coordenada do marcador de partida
+						*/
+
+						console.log(this.polilinhas);
+
+						if(this.polilinhas.length > 0){
+							const { polilinha } = this.polilinhas[this.polilinhas.length - 1]
+							console.log(polilinha);
+							this.adicionarPonto(polilinha[polilinha.length - 1]);
+							console.log("nesse cu")
 						}else{
-							this.deslocamento -= distancia;
-							this.distaciaTotal = this.distaciaTotal - distancia;
+							this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor);
+							this.adicionarPonto(new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude));
+							console.log("nesse cu aqui")
 						}
 
-
-						if( this.polilinhas.length > 0 ){
-							const { polilinha } = this.polilinhas[this.polilinhas.length - 1]
-							const coordenada = polilinha[polilinha.length - 1];
-							this.adicionarPonto(coordenada);
-						} 
-
-
-						this.extremos.forEach(el => {
-							this.adicionarMarcador(el.latitude, el.longitude, el.nome, el.vetor);
-						})
-						this.map.setCenter({lat, lng});
-						this.map.setZoom(17);
-
+						infowindow.close();
+						
+						
 					},
 					renderizarPolilinha() {
 						// Remover todas as polylines do mapa
@@ -681,17 +691,17 @@
 								const button1 = document.createElement('button');
 								button1.textContent = 'Mudar para deslocamento';
 								button1.dataset.uid = uid;
-								button1.onclick = () => this.mudarParaDeslocamento(uid);
+								button1.onclick = () => this.mudarParaDeslocamento(uid, infowindow);
 
 								const button2 = document.createElement('button');
 								button2.textContent = 'Mudar para coleta';
 								button2.dataset.uid = uid;
-								button2.onclick = () => this.mudarParaColeta(uid);
+								button2.onclick = () => this.mudarParaColeta(uid, infowindow);
 
 								const button3 = document.createElement('button');
 								button3.textContent = 'Remover trecho';
 								button3.dataset.uid = uid;
-								button3.onclick = () => this.removerTrecho(uid);
+								button3.onclick = () => this.removerTrecho(uid, polyline, infowindow);
 
 								contentDiv.appendChild(button1);
 								contentDiv.appendChild(button2);
