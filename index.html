@@ -165,11 +165,9 @@
 							this.opcao = 'deslocamento';
 						}
 					},
-					pontos: function(newVal, oldVal) {
-						console.log(newVal);
-					}
 
 				},
+
 				methods: {
 					initMap() {
 						this.map = new google.maps.Map(document.getElementById('map'), {
@@ -240,7 +238,8 @@
 
 						const overlay = new google.maps.OverlayView();
 						overlay.onAdd = function() {
-							const layer = this.getPanes().overlayLayer;
+							const layer = this.getPanes()
+								.overlayLayer;
 							layer.appendChild(labelDiv);
 						};
 
@@ -276,7 +275,7 @@
 							Se existe uma polilinha após esse marcador inicial de PARTIDA esse marcador não pode ser removido
 							*/
 
-							if (marker.id === 'partida' && this.polilinhas.length > 1){
+							if (marker.id === 'partida' && this.polilinhas.length > 1) {
 								alert('Não é possível remover o marcador inicial de partida');
 								return;
 							}
@@ -286,7 +285,7 @@
 							Se não existe uma polilinha após esse marcador inicial de PARTIDA esse marcador  pode ser removido
 							*/
 
-							if (marker.id === 'partida' && this.polilinhas.length === 0){
+							if (marker.id === 'partida' && this.polilinhas.length === 0) {
 								this.apagarMarcadorPartida(marker, overlay);
 								return;
 							}
@@ -297,10 +296,10 @@
 							Para apagar a última polilinha, apagamos também a último trecho que concudia até ele
 							*/
 
-							if(marker.id === 'chegada'){
+							if (marker.id === 'chegada') {
 								this.apagarMarcadorChegada(marker, overlay);
 							}
-						});					
+						});
 
 						this.map.setCenter(coords);
 						this.map.setZoom(17);
@@ -316,61 +315,104 @@
 							this.pontos.shift();
 						}
 					},
-					apagarMarcadorChegada(marcadorChegada, overlay){
-						marcadorChegada.setMap(null);
-						overlay.setMap(null);
+					apagarMarcadorChegada(marcadorChegada, overlay) {
+
+						Swal.fire({
+							title: 'Aviso',
+							text: 'Esse marcador será apagado. Deseja continuar?',
+							icon: 'info',
+							showCancelButton: true,
+							confirmButtonColor: '#3085d6',
+							cancelButtonColor: '#d33',
+							confirmButtonText: 'Sim, faça isso!',
+						}).then(async (result) => {
+							if (result.isConfirmed) {
+
+								marcadorChegada.setMap(null);
+								overlay.setMap(null);
 
 
-						/*
-							Após remover a última polilinha, é necessário recarregar o mapa
-						*/
-						this.initMap();
+								/*
+									Após remover a última polilinha, é necessário recarregar o mapa
+								*/
+								this.initMap();
 
-						/*
-							Após remover o marcador de chegada, é necessário apagar a polilinha que traça a rota até ele.
-							Essa polilinha é a última da lista de polilinhas.
-						*/	
+								/*
+									Após remover o marcador de chegada, é necessário apagar a polilinha que traça a rota até ele.
+									Essa polilinha é a última da lista de polilinhas.
+								*/
 
-						this.polilinhas.pop();
+								this.polilinhas.pop();
 
 
-						/*
-							Então duas coisas precisam acontecer:
-								1) O marcador de início precisa ser colocado de volta e a polilinha precisa ser recarregada.
-								2) Porém, o this.polilinha temn um ouvinte e caso ainda haja elementos na polilinha será renderizado automaticamente na view.
-								3) Vamos precisar então avaliar qual será o último ponto disponível em this.pontos para recomeçar a marcação dos trechos.
+								/*
+									Então duas coisas precisam acontecer:
+										1) O marcador de início precisa ser colocado de volta e a polilinha precisa ser recarregada.
+										2) Porém, o this.polilinha temn um ouvinte e caso ainda haja elementos na polilinha será renderizado automaticamente na view.
+										3) Vamos precisar então avaliar qual será o último ponto disponível em this.pontos para recomeçar a marcação dos trechos.
+
+								*/
+
+								this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor)
+
+
+								/*
+									Caso já exista uma polilinha, o inicio do próximo percurso será o final dessa polilinha restante.
+									Caso não haja mais polilinhas, então o inicio será o do próprio marcador de partida.
+									Caso não haja marcador de partida, será obrigatório criar um novo
+								*/
+
+								if (this.polilinhas.length > 0) {
+									const {
+										polilinha
+									} = this.polilinhas[this.polilinhas.length - 1];
+									this.adicionarPonto(polilinha[polilinha.length - 1]);
+								} else {
+									const coordenadas = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
+									this.adicionarPonto(coordenadas);
+								}
+
+								this.tipo = null;
+								this.local = null;
+								this.segundoMarcador = null;
+
+
 								
-						*/
-
-						this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor)
+								Swal.fire('Feito!', 'Marcador apagado.', 'success');
+							}
+						});					
+					},
+					apagarMarcadorPartida(marcadorPartida, overlay) {
 					
 
-						/*
-							Caso já exista uma polilinha, o inicio do próximo percurso será o final dessa polilinha restante.
-							Caso não haja mais polilinhas, então o inicio será o do próprio marcador de partida.
-							Caso não haja marcador de partida, será obrigatório criar um novo
-						*/
-						
-						if(this.polilinhas.length > 0){
-							const { polilinha } = this.polilinhas[this.polilinhas.length - 1]; 
-							this.adicionarPonto(polilinha[polilinha.length - 1]);
-						}else{
-							const coordenadas = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
-							this.adicionarPonto(coordenadas);
-						}						
-						
-					},
-					apagarMarcadorPartida(marcadorPartida, overlay){
-						marcadorPartida.setMap(null);
-						overlay.setMap(null);
+						Swal.fire({
+							title: 'Aviso',
+							text: 'Esse marcador será apagado. Deseja continuar?',
+							icon: 'info',
+							showCancelButton: true,
+							confirmButtonColor: '#3085d6',
+							cancelButtonColor: '#d33',
+							confirmButtonText: 'Sim, faça isso!',
+						}).then(async (result) => {
+							if (result.isConfirmed) {
+							this.initMap();
 
-						/*
-							Não basta remover apenas o marcador do mapa, é preciso zerar os pontos também.
-							Esses pontos são as coordenadas para buscar os trechos.
-						*/
+								/*
+									Não basta remover apenas o marcador do mapa, é preciso zerar os pontos também.
+									Esses pontos são as coordenadas para buscar os trechos.
+									É necessário resetar tipo e local para forçar uma nova escolha.
+								*/
 
-						this.pontos = [];
-						
+								this.pontos = [];
+								this.tipo = null;
+								this.local = null;
+								
+								Swal.fire('Feito!', 'Marcador apagado.', 'success');
+							}
+						});
+
+				
+
 					},
 					closePopup() {
 						this.isPopupVisible = false;
@@ -383,33 +425,45 @@
 							nome
 						} = local[0];
 
-						if(this.vetor === "partida"){
-							this.primeiroMarcador = { latitude, longitude, nome, vetor: this.vetor }
+						if (this.vetor === "partida") {
+							this.primeiroMarcador = {
+								latitude,
+								longitude,
+								nome,
+								vetor: this.vetor
+							}
 							const ponto = new google.maps.LatLng(latitude, longitude);
 							this.adicionarPonto(ponto);
 							this.adicionarMarcador(latitude, longitude, nome, this.vetor);
-							
-						}else{
-							this.segundoMarcador = { latitude, longitude, nome, vetor: this.vetor }
+
+						} else {
+							this.segundoMarcador = {
+								latitude,
+								longitude,
+								nome,
+								vetor: this.vetor
+							}
 							const pontoPartida = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
 							const pontoChegada = new google.maps.LatLng(this.segundoMarcador.latitude, this.segundoMarcador.longitude);
 							this.adicionarMarcador(latitude, longitude, nome, this.vetor);
 
-							if(this.polilinhas.length > 0){
-								const polys =  this.polilinhas[this.polilinhas.length - 1]
-								const { polilinha } = polys;
+							if (this.polilinhas.length > 0) {
+								const polys = this.polilinhas[this.polilinhas.length - 1]
+								const {
+									polilinha
+								} = polys;
 								this.adicionarPonto(polilinha[polilinha.length - 1]);
 								this.adicionarPonto(pontoChegada);
 								this.pegarTrecho();
-							}else{
+							} else {
 								this.adicionarPonto(pontoPartida);
 								this.adicionarPonto(pontoChegada);
 								this.pegarTrecho();
 							}
-							
+
 						}
 
-					
+
 					},
 					criarQueryParams() {
 						if (this.pontos.length < 2) {
@@ -425,10 +479,11 @@
 						return google.maps.geometry.encoding.decodePath(points);
 					},
 					duploCliqueMapa(latLng) {
-						if(!this.testarDadosDoFormulario()){
+						if (!this.testarDadosDoFormulario()) {
 							return;
 						}
-						
+
+
 						this.adicionarPonto(latLng);
 						this.pegarTrecho();
 					},
@@ -493,7 +548,8 @@
 						const unidade = (medida === 0 ? 'metro' : (medida < 1000 ? 'metros' : 'km'));
 
 						if (medida > 1000) {
-							medida = (medida / 1000).toFixed(1);
+							medida = (medida / 1000)
+								.toFixed(1);
 						}
 
 						const result = `${medida} ${unidade}`;
@@ -512,16 +568,22 @@
 
 						// Convert bytes to hex
 						const hexBytes = Array.from(bytes, (byte) => {
-							return byte.toString(16).padStart(2, '0');
+							return byte.toString(16)
+								.padStart(2, '0');
 						});
 
 						// Insert hyphens to format the UUID
 						return (
-							hexBytes.slice(0, 4).join('') + '-' +
-							hexBytes.slice(4, 6).join('') + '-' +
-							hexBytes.slice(6, 8).join('') + '-' +
-							hexBytes.slice(8, 10).join('') + '-' +
-							hexBytes.slice(10, 16).join('')
+							hexBytes.slice(0, 4)
+							.join('') + '-' +
+							hexBytes.slice(4, 6)
+							.join('') + '-' +
+							hexBytes.slice(6, 8)
+							.join('') + '-' +
+							hexBytes.slice(8, 10)
+							.join('') + '-' +
+							hexBytes.slice(10, 16)
+							.join('')
 						);
 					},
 					loadGerencias() {
@@ -559,34 +621,46 @@
 					},
 					mudarParaColeta(uid, infowindow) {
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
-						const {distancia, opcao} = this.polilinhas[index];
+						const {
+							distancia,
+							opcao
+						} = this.polilinhas[index];
 
-						if(opcao === "coleta"){
+						if (opcao === "coleta") {
 							return;
 						}
 
 						this.deslocamento -= distancia;
 						this.coleta += distancia;
 
-						this.polilinhas = this.polilinhas.map((polyline, i) => 
-							i === index ? { ...polyline, opcao: "coleta" } : polyline
+						this.polilinhas = this.polilinhas.map((polyline, i) =>
+							i === index ? {
+								...polyline,
+								opcao: "coleta"
+							} : polyline
 						);
 
 						infowindow.close();
 					},
 					mudarParaDeslocamento(uid, infowindow) {
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
-						const {distancia, opcao} = this.polilinhas[index];
+						const {
+							distancia,
+							opcao
+						} = this.polilinhas[index];
 
-						if(opcao === "deslocamento"){
+						if (opcao === "deslocamento") {
 							return;
 						}
 
-						this.deslocamento +=distancia;
+						this.deslocamento += distancia;
 						this.coleta -= distancia;
 
-						this.polilinhas = this.polilinhas.map((polyline, i) => 
-							i === index ? { ...polyline, opcao: "deslocamento" } : polyline
+						this.polilinhas = this.polilinhas.map((polyline, i) =>
+							i === index ? {
+								...polyline,
+								opcao: "deslocamento"
+							} : polyline
 						);
 
 						infowindow.close();
@@ -595,7 +669,7 @@
 						if (this.pontos.length < 2) {
 							return;
 						}
-						
+
 						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
 
 						axios.get(url)
@@ -605,51 +679,77 @@
 							.catch(error => console.log(error));
 					},
 					removerTrecho(uid, poly, infowindow) {
-						/*
-							Remover a polilinha da lista de polilinhas e do mapa.
-							S;o será permitido remover a última linha da lista de polilinhas.
-						*/
 
-						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
-						const { distancia, opcao } = this.polilinhas[index];
-
-						if(opcao === "deslocamento"){
-							this.deslocamento -= distancia;
-						}else{
-							this.coleta -= distancia;
-						}
-
-						this.distanciaTotal -= distancia;					
-						
-						const len = this.polilinhas.length;
-
-						if(index !== len - 1){
-							alert("Não é possível remover o trecho");
+						if(this.segundoMarcador !== null){
+							Swal.fire("Atenção","Operação negada", "warning" );
 							return;
 						}
 
-						poly.setMap(null);
-						this.polilinhas.pop()
+						Swal.fire({
+							title: 'Aviso',
+							text: 'Esse marcador trecho será removido. Deseja continuar?',
+							icon: 'info',
+							showCancelButton: true,
+							confirmButtonColor: '#3085d6',
+							cancelButtonColor: '#d33',
+							confirmButtonText: 'Sim, faça isso!',
+						}).then(async (result) => {
+							if (result.isConfirmed) {
+								/*
+									Remover a polilinha da lista de polilinhas e do mapa.
+									S;o será permitido remover a última linha da lista de polilinhas.
+								*/
 
-						/*
-							Agora será necessário atribuir o ultimo ponto da polilinha a última coordenada da nova última polilinha.
-							Se houver ainda auma polilinha, deve-se pegar o ultimo ponto dessa polilinha para setar as posições do this.pontos.
-							Caso não, deve ser utilizada a coordenada do marcador de partida.
-							Também deverá ser observado que a o deslocamento, a coleta e o total devem ser decrementado.							
-						*/
+								const index = this.polilinhas.findIndex(obj => obj.uid === uid);
+								const {
+									distancia,
+									opcao
+								} = this.polilinhas[index];
 
-						if(this.polilinhas.length > 0){
-							const { polilinha } = this.polilinhas[this.polilinhas.length - 1];
-							this.adicionarPonto(polilinha[polilinha.length - 1]);
-							
-						}else{
-							this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor);
-							this.adicionarPonto(new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude));
-						}
+								if (opcao === "deslocamento") {
+									this.deslocamento -= distancia;
+								} else {
+									this.coleta -= distancia;
+								}
 
-						infowindow.close();
+								this.distanciaTotal -= distancia;
+
+								const len = this.polilinhas.length;
+
+								if (index !== len - 1) {
+									alert("Não é possível remover o trecho");
+									return;
+								}
+
+								poly.setMap(null);
+								this.polilinhas.pop()
+
+								/*
+									Agora será necessário atribuir o ultimo ponto da polilinha a última coordenada da nova última polilinha.
+									Se houver ainda auma polilinha, deve-se pegar o ultimo ponto dessa polilinha para setar as posições do this.pontos.
+									Caso não, deve ser utilizada a coordenada do marcador de partida.
+									Também deverá ser observado que a o deslocamento, a coleta e o total devem ser decrementado.							
+								*/
+
+								if (this.polilinhas.length > 0) {
+									const {
+										polilinha
+									} = this.polilinhas[this.polilinhas.length - 1];
+									this.adicionarPonto(polilinha[polilinha.length - 1]);
+
+								} else {
+									this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor);
+									this.adicionarPonto(new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude));
+								}
+
+
+								infowindow.close();
+								Swal.fire('Feito!', 'Trecho removido.', 'success');
+							}
+						});
 						
 						
+
 					},
 					renderizarPolilinha() {
 						// Remover todas as polylines do mapa
@@ -682,7 +782,9 @@
 							const polyline = new google.maps.Polyline(polylineOptions);
 
 							polyline.addListener('rightclick', (event) => {
-								const { uid } = polylineObj;
+								const {
+									uid
+								} = polylineObj;
 								const contentDiv = document.createElement('div');
 								contentDiv.className = 'popup-content';
 
@@ -729,41 +831,41 @@
 							Swal.fire("Oops!", `Preencha o campo ${campo}`, "error")
 						}
 
-						if (!this.gerencia){
+						if (!this.gerencia) {
 							mostrarAvisoCampoAusente('gerência');
 
-		
-							return false;
-						}else if (!this.roteiro){
-							mostrarAvisoCampoAusente('roteiro');
-			
-	
-							return false;
-						}else if (!this.lado){
-							mostrarAvisoCampoAusente('lado');
-				
 
 							return false;
-						}else if(!this.opcao){
-							mostrarAvisoCampoAusente('opção');
-	
-	
+						} else if (!this.roteiro) {
+							mostrarAvisoCampoAusente('roteiro');
+
+
 							return false;
-						}else if(!this.vetor){
+						} else if (!this.lado) {
+							mostrarAvisoCampoAusente('lado');
+
+
+							return false;
+						} else if (!this.opcao) {
+							mostrarAvisoCampoAusente('opção');
+
+
+							return false;
+						} else if (!this.vetor) {
 							mostrarAvisoCampoAusente('partida');
 
-		
+
 							return false;
-						}else if(!this.tipo){
+						} else if (!this.tipo) {
 							mostrarAvisoCampoAusente('tipo');
 
 							return false;
-						}else if(!this.local){
+						} else if (!this.local) {
 							mostrarAvisoCampoAusente('local');
 
 
 							return false;
-						}else{
+						} else {
 							return true
 						}
 
