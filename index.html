@@ -148,6 +148,7 @@
 					local: null,
 					primeiroMarcador: null,
 					segundoMarcador: null,
+					marcadores: [],
 				},
 				mounted() {
 					this.loadGerencias();
@@ -227,7 +228,6 @@
 					},
 					adicionarMarcador(lat, lng, label, vetor) {
 						const coords = new google.maps.LatLng(lat, lng);
-						this.adicionarPonto(coords);
 
 						const customIcon = {
 							url: vetor === "partida" ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
@@ -273,73 +273,35 @@
 
 						marker.addListener('dblclick', (event) => {
 
-							if (marker.id === "partida" && this.polilinhas.length > 0) {
-								Swal.fire({
-									title: 'Operação negada',
-									text: 'Não é possível apagar o local de partida nesse momento',
-									icon: 'error'
-								})
+							/*
+							Primeira coisa:
+							Se existe uma polilinha após esse marcador inicial de PARTIDA esse marcador não pode ser removido
+							*/
 
+							if (marker.id === 'partida' && this.polilinhas.length > 1){
+								alert('Não é possível remover o marcador inicial de partida');
 								return;
 							}
 
-							if (marker.id === "partida") {
-								Swal.fire({
-									title: 'Apagar partida?',
-									text: 'Deseja continuar?',
-									icon: 'info',
-									showCancelButton: true,
-									confirmButtonColor: '#3085d6',
-									cancelButtonColor: '#d33',
-									confirmButtonText: 'Sim, desejo continuar!',
-								}).then(async (result) => {
-									if (result.isConfirmed) {
-										this.extremos = [];
-										marker.setMap(null);
-										overlay.setMap(null);
-									
-										Swal.fire('', 'Partida removida.', 'success')
-									}
-								});
+							/*
+							Segunda coisa:
+							Se não existe uma polilinha após esse marcador inicial de PARTIDA esse marcador  pode ser removido
+							*/
 
-								return;
-							}
-
-							if (marker.id === "chegada") {
-								Swal.fire({
-									title: 'Apagar chegada?',
-									text: 'Deseja continuar?',
-									icon: 'info',
-									showCancelButton: true,
-									confirmButtonColor: '#3085d6',
-									cancelButtonColor: '#d33',
-									confirmButtonText: 'Sim, desejo continuar!',
-								}).then(async (result) => {
-									if (result.isConfirmed) {
-
-										this.initMap();
-										this.polilinhas.pop();
-										const ultimoPonto = this.polilinhas[this.polilinhas.length - 1].polilinha[0];
-										console.log(ultimoPonto)
-										if(this.polilinhas.length > 0)
-										{
-											this.adicionarPonto(ultimoPonto);
-										}else{
-											this.pontos = [];
-											this.adicionarPonto(new google.maps.latLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude));
-										}
-										
-										this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor);
-									
-										Swal.fire('', 'Chegada removida.', 'success');
-									}
-								});
-
+							if (marker.id === 'partida' && this.polilinhas.length === 0){
+								this.apagarMarcadorPartida(marker, overlay);
 								return;
 							}
 
 
-							
+							/*
+							Terceira coisa: 
+							Para apagar a última polilinha, apagamos também a último trecho que concudia até ele
+							*/
+
+							if(marker.id === 'chegada'){
+								this.apagarMarcadorChegada(marker, overlay);
+							}
 						});					
 
 						this.map.setCenter(coords);
@@ -355,6 +317,57 @@
 						if (this.pontos.length > 2) {
 							this.pontos.shift();
 						}
+					},
+					apagarMarcadorChegada(marcadorChegada, overlay){
+						marcadorChegada.setMap(null);
+						overlay.setMap(null);
+
+
+						/*
+							Após remover a última polilinha, é necessário recarregar o mapa
+						*/
+						this.initMap();
+
+						/*
+							Após remover o marcador de chegada, é necessário apagar a polilinha que traça a rota até ele.
+							Essa polilinha é a última da lista de polilinhas.
+						*/	
+
+						this.polilinhas.pop();
+
+
+						/*
+							Então duas coisas precisam acontecer:
+								1) O marcador de início precisa ser colocado de volta e a polilinha precisa ser recarregada.
+								2) Porém, o this.polilinha temn um ouvinte e caso ainda haja elementos na polilinha será renderizado automaticamente na view.
+								3) Vamos precisar então avaliar qual será o último ponto disponível em this.pontos para recomeçar a marcação dos trechos.
+								
+						*/
+
+						this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor)
+
+						
+
+						if(this.polilinhas.length > 0){
+							const NEW_ultimaPolilinha = this.polilinhas[this.polilinhas.length - 1];
+							console.log(NEW_ultimaPolilinha);
+						}else{
+							const coordenadas = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
+							this.adicionarPonto(coordenadas);
+						}					
+						
+					},
+					apagarMarcadorPartida(marcadorPartida, overlay){
+						marcadorPartida.setMap(null);
+						overlay.setMap(null);
+
+						/*
+							Não basta remover apenas o marcador do mapa, é preciso zerar os pontos também.
+							Esses pontos são as coordenadas para buscar os trechos.
+						*/
+
+						this.pontos = [];
+						
 					},
 					closePopup() {
 						this.isPopupVisible = false;
