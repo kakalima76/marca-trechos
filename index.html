@@ -296,6 +296,10 @@
 					},
 					adicionarPonto(latLng) {
 
+						if(this.pontos[0] === this.pontos[1]){
+							this.pontos = []
+						}
+
 						const lat = latLng.lat();
 						const lng = latLng.lng();
 						this.pontos.push({
@@ -547,6 +551,14 @@
 					mudarParaDeslocamento(uid) {
 						console.log('Mudar para deslocamento', uid);
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
+						const {distancia, opcao} = this.polilinhas[index];
+
+						if(opcao === "deslocamento"){
+							return;
+						}
+						
+						this.deslocamento +=distancia;
+						this.coleta -= distancia;
 
 						this.polilinhas = this.polilinhas.map((polyline, i) => 
 							i === index ? { ...polyline, opcao: "deslocamento" } : polyline
@@ -555,14 +567,23 @@
 					mudarParaColeta(uid) {
 						console.log('Mudar para coleta', uid);
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
+						const {distancia, opcao} = this.polilinhas[index];
+
+						if(opcao === "coleta"){
+							return;
+						}
+						
+						this.deslocamento -= distancia;
+						this.coleta += distancia;
 
 						this.polilinhas = this.polilinhas.map((polyline, i) => 
 							i === index ? { ...polyline, opcao: "coleta" } : polyline
 						);
 					},
 					removerTrecho(uid) {
-						console.log('apagar polilinha', uid);
+
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
+						const { distancia, opcao} = this.polilinhas[index];
 
 						if(index != this.polilinhas.length - 1){
 							alert("Operação negada");
@@ -571,10 +592,21 @@
 
 						this.polilinhas = this.polilinhas.filter(x => x.uid !== uid);
 						const {lat, lng} = this.pontos[0];
+
+						if(opcao === "coleta"){
+							this.coleta -= distancia;
+							this.distaciaTotal = this.distaciaTotal - distancia;
+						}else{
+							this.deslocamento -= distancia;
+							this.distaciaTotal = this.distaciaTotal - distancia;
+						}
+						
+						
 						this.initMap();
 						this.map.setCenter({lat, lng});
 						this.map.setZoom(17);
 						this.pontos[1] = this.pontos[0];
+						
 					},
 					
 
@@ -597,6 +629,7 @@
 						return this.formataMedidas(this.coleta);
 					},
 					formatarDistanciaTotal() {
+						this.distanciaTotal = this.deslocamento + this.coleta;
 						return this.formataMedidas(this.distanciaTotal);
 					},
 
