@@ -345,17 +345,18 @@
 						*/
 
 						this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor)
+					
 
+						/*
+							Caso já exista uma polilinha, o inicio do próximo percurso será o final dessa polilinha restante.
+							Caso não haja mais polilinhas, então o inicio será o do próprio marcador de partida.
+							Caso não haja marcador de partida, será obrigatório criar um novo
+						*/
 						
-
 						if(this.polilinhas.length > 0){
-							console.log(1)
-							const poly = this.polilinhas[this.polilinhas.length - 1];
-							const path = polyline.getPath();
-							const ultimaCoordenada = path.getAt(path.getLength() - 1);
-							this.adicionarPonto(ultimaCoordenada);
+							const { polilinha } = this.polilinhas[this.polilinhas.length - 1]; 
+							this.adicionarPonto(polilinha[polilinha.length - 1]);
 						}else{
-							console.log(2)
 							const coordenadas = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
 							this.adicionarPonto(coordenadas);
 						}					
