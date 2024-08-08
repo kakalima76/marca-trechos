@@ -156,7 +156,6 @@
 				},
 				watch: {
 					polilinhas: function(newVal, oldVal) {
-						console.log(newVal);
 						this.renderizarPolilinha();
 					},
 					vetor: function() {
@@ -207,7 +206,6 @@
 						autocomplete.addListener('place_changed', () => {
 							const place = autocomplete.getPlace();
 							if (!place.geometry) {
-								console.log("No details available for input: '" + place.name + "'");
 								return;
 							}
 
@@ -359,7 +357,7 @@
 						}else{
 							const coordenadas = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
 							this.adicionarPonto(coordenadas);
-						}					
+						}						
 						
 					},
 					apagarMarcadorPartida(marcadorPartida, overlay){
@@ -403,12 +401,10 @@
 								this.adicionarPonto(polilinha[polilinha.length - 1]);
 								this.adicionarPonto(pontoChegada);
 								this.pegarTrecho();
-								console.log(`nesse cu`)
 							}else{
 								this.adicionarPonto(pontoPartida);
 								this.adicionarPonto(pontoChegada);
 								this.pegarTrecho();
-								console.log(`ou nesse cu`)
 							}
 							
 						}
@@ -562,7 +558,6 @@
 							});
 					},
 					mudarParaColeta(uid, infowindow) {
-						console.log('Mudar para coleta', uid);
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
 						const {distancia, opcao} = this.polilinhas[index];
 
@@ -580,7 +575,6 @@
 						infowindow.close();
 					},
 					mudarParaDeslocamento(uid, infowindow) {
-						console.log('Mudar para deslocamento', uid);
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
 						const {distancia, opcao} = this.polilinhas[index];
 
@@ -604,7 +598,6 @@
 						
 						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
 
-						console.log(url);
 						axios.get(url)
 							.then(response => {
 								this.extrairDadosDoPayload(response.data);
@@ -612,14 +605,22 @@
 							.catch(error => console.log(error));
 					},
 					removerTrecho(uid, poly, infowindow) {
-						console.log(uid, poly, infowindow);
-
 						/*
 							Remover a polilinha da lista de polilinhas e do mapa.
 							S;o será permitido remover a última linha da lista de polilinhas.
 						*/
 
 						const index = this.polilinhas.findIndex(obj => obj.uid === uid);
+						const { distancia, opcao } = this.polilinhas[index];
+
+						if(opcao === "deslocamento"){
+							this.deslocamento -= distancia;
+						}else{
+							this.coleta -= distancia;
+						}
+
+						this.distanciaTotal -= distancia;					
+						
 						const len = this.polilinhas.length;
 
 						if(index !== len - 1){
@@ -633,20 +634,17 @@
 						/*
 							Agora será necessário atribuir o ultimo ponto da polilinha a última coordenada da nova última polilinha.
 							Se houver ainda auma polilinha, deve-se pegar o ultimo ponto dessa polilinha para setar as posições do this.pontos.
-							Caso não, deve ser utilizada a coordenada do marcador de partida
+							Caso não, deve ser utilizada a coordenada do marcador de partida.
+							Também deverá ser observado que a o deslocamento, a coleta e o total devem ser decrementado.							
 						*/
 
-						console.log(this.polilinhas);
-
 						if(this.polilinhas.length > 0){
-							const { polilinha } = this.polilinhas[this.polilinhas.length - 1]
-							console.log(polilinha);
+							const { polilinha } = this.polilinhas[this.polilinhas.length - 1];
 							this.adicionarPonto(polilinha[polilinha.length - 1]);
-							console.log("nesse cu")
+							
 						}else{
 							this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor);
 							this.adicionarPonto(new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude));
-							console.log("nesse cu aqui")
 						}
 
 						infowindow.close();
