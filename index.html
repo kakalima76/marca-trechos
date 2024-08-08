@@ -146,8 +146,8 @@
 					polilinha: null,
 					tipo: null,
 					local: null,
-					extremos: [],
 					primeiroMarcador: null,
+					segundoMarcador: null,
 				},
 				mounted() {
 					this.loadGerencias();
@@ -369,19 +369,21 @@
 
 						if(this.vetor === "partida"){
 							this.primeiroMarcador = { latitude, longitude, nome, vetor: this.vetor }
-							this.extremos[0] = this.primeiroMarcador;
+							const ponto = new google.maps.LatLng(latitude, longitude);
+							this.adicionarPonto(ponto);
+							this.adicionarMarcador(latitude, longitude, nome, this.vetor);
 							
 						}else{
-							this.extremos[1] = { latitude, longitude, nome, vetor: this.vetor }
+							this.segundoMarcador = { latitude, longitude, nome, vetor: this.vetor }
+							const pontoPartida = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
+							const pontoChegada = new google.maps.LatLng(this.segundoMarcador.latitude, this.segundoMarcador.longitude);
+							this.adicionarMarcador(latitude, longitude, nome, this.vetor);
+							this.adicionarPonto(pontoPartida);
+							this.adicionarPonto(pontoChegada);
+							this.pegarTrecho();
 						}
 
-						this.extremos.forEach(el => {
-							const ponto = new google.maps.LatLng(el.latitude, el.longitude);
-							this.adicionarPonto(ponto);
-							this.pegarTrecho();
-							this.adicionarMarcador(el.latitude, el.longitude, el.nome, el.vetor);
-						})
-						
+					
 					},
 					criarQueryParams() {
 						if (this.pontos.length < 2) {
@@ -449,6 +451,7 @@
 							lado: this.lado,
 							opcao: this.opcao,
 							uid: this.gerarUUIDv4(),
+							id: Date.now(),
 						}
 
 						this.polilinhas.push(obj);
@@ -564,7 +567,10 @@
 						if (this.pontos.length < 2) {
 							return;
 						}
+						
 						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
+
+						console.log(url);
 						axios.get(url)
 							.then(response => {
 								this.extrairDadosDoPayload(response.data);
@@ -580,9 +586,10 @@
 							return;
 						}
 
-						this.polilinhas = this.polilinhas.filter(x => x.uid !== uid);
-						const {lat, lng} = this.pontos[0];
-
+						this.initMap();		
+						
+						this.polilinhas = this.polilinhas.filter(x => x.uid !== uid).sort((a, b) => a.id - b.id);
+					
 						if(opcao === "coleta"){
 							this.coleta -= distancia;
 							this.distaciaTotal = this.distaciaTotal - distancia;
@@ -598,7 +605,7 @@
 							this.adicionarPonto(coordenada);
 						} 
 
-						this.initMap();
+
 						this.extremos.forEach(el => {
 							this.adicionarMarcador(el.latitude, el.longitude, el.nome, el.vetor);
 						})
