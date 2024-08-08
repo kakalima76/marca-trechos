@@ -39,7 +39,7 @@
 						<option value="" disabled selected>Selecione...</option>
 						<option value="D">Lado Direito</option>
 						<option value="E">Lado Esquerdo</option>
-						<option value="ED">Ambos</option>
+						<option value="ED" selected>Ambos</option>
 					</select>
 				</div>
 				<div class="form-group">
@@ -133,7 +133,7 @@
 					polilinhas: [],
 					gerencia: null,
 					roteiro: null,
-					lado: null,
+					lado: 'ED',
 					opcao: null,
 					isPopupVisible: false,
 					pontos: [],
@@ -146,6 +146,7 @@
 					polilinha: null,
 					tipo: null,
 					local: null,
+					extremos: [],
 				},
 				mounted() {
 					this.loadGerencias();
@@ -172,8 +173,6 @@
 							draggableCursor: 'default', // Altera o cursor de pan para uma seta
 							disableDoubleClickZoom: true // Desabilita o zoom no duplo clique
 						});
-
-						console.log("mapa iniciado");
 
 						const button = document.createElement('button');
 						button.innerHTML = '<i class="fas fa-eye"></i>';
@@ -221,12 +220,12 @@
 
 
 					},
-					adicionarMarcador(lat, lng, label) {
+					adicionarMarcador(lat, lng, label, vetor) {
 						const coords = new google.maps.LatLng(lat, lng);
 						this.adicionarPonto(coords);
 
 						const customIcon = {
-							url: this.vetor === "partida" ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+							url: vetor === "partida" ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
 							scaledSize: new google.maps.Size(40, 40),
 							origin: new google.maps.Point(0, 0),
 							anchor: new google.maps.Point(10, 10),
@@ -263,7 +262,8 @@
 								lng: lng
 							},
 							icon: customIcon,
-							map: this.map
+							map: this.map,
+							id: vetor
 						});
 
 						if (this.vetor === "chegada") {
@@ -294,7 +294,17 @@
 							longitude,
 							nome
 						} = local[0];
-						this.adicionarMarcador(latitude, longitude, nome);
+
+						if(this.vetor === "partida"){
+							this.extremos[0] = { latitude, longitude, nome, vetor: this.vetor }
+						}else{
+							this.extremos[1] = { latitude, longitude, nome, vetor: this.vetor }
+						}
+
+						this.extremos.forEach(el => {
+							this.adicionarMarcador(el.latitude, el.longitude, el.nome, el.vetor);
+						})
+						
 					},
 					criarQueryParams() {
 						if (this.pontos.length < 2) {
@@ -506,14 +516,12 @@
 							const { polilinha } = this.polilinhas[this.polilinhas.length - 1]
 							const coordenada = polilinha[polilinha.length - 1];
 							this.adicionarPonto(coordenada);
-						} else {
-							this.vetor = null;
-							this.tipo = null;
-							this.local = null;
-							this.pontos = [];
-						}
+						} 
 
 						this.initMap();
+						this.extremos.forEach(el => {
+							this.adicionarMarcador(el.latitude, el.longitude, el.nome, el.vetor);
+						})
 						this.map.setCenter({lat, lng});
 						this.map.setZoom(17);
 
