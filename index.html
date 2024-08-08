@@ -349,9 +349,13 @@
 						
 
 						if(this.polilinhas.length > 0){
-							const NEW_ultimaPolilinha = this.polilinhas[this.polilinhas.length - 1];
-							console.log(NEW_ultimaPolilinha);
+							console.log(1)
+							const poly = this.polilinhas[this.polilinhas.length - 1];
+							const path = polyline.getPath();
+							const ultimaCoordenada = path.getAt(path.getLength() - 1);
+							this.adicionarPonto(ultimaCoordenada);
 						}else{
+							console.log(2)
 							const coordenadas = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
 							this.adicionarPonto(coordenadas);
 						}					
@@ -391,9 +395,21 @@
 							const pontoPartida = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
 							const pontoChegada = new google.maps.LatLng(this.segundoMarcador.latitude, this.segundoMarcador.longitude);
 							this.adicionarMarcador(latitude, longitude, nome, this.vetor);
-							this.adicionarPonto(pontoPartida);
-							this.adicionarPonto(pontoChegada);
-							this.pegarTrecho();
+
+							if(this.polilinhas.length > 0){
+								const polys =  this.polilinhas[this.polilinhas.length - 1]
+								const { polilinha } = polys;
+								this.adicionarPonto(polilinha[polilinha.length - 1]);
+								this.adicionarPonto(pontoChegada);
+								this.pegarTrecho();
+								console.log(`nesse cu`)
+							}else{
+								this.adicionarPonto(pontoPartida);
+								this.adicionarPonto(pontoChegada);
+								this.pegarTrecho();
+								console.log(`ou nesse cu`)
+							}
+							
 						}
 
 					
