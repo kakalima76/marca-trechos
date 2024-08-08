@@ -147,6 +147,7 @@
 					tipo: null,
 					local: null,
 					extremos: [],
+					primeiroMarcador: null,
 				},
 				mounted() {
 					this.loadGerencias();
@@ -154,6 +155,7 @@
 				},
 				watch: {
 					polilinhas: function(newVal, oldVal) {
+						console.log(newVal);
 						this.renderizarPolilinha();
 					},
 					vetor: function() {
@@ -163,6 +165,9 @@
 							this.opcao = 'deslocamento';
 						}
 					},
+					pontos: function(newVal, oldVal) {
+						console.log(newVal);
+					}
 
 				},
 				methods: {
@@ -266,9 +271,76 @@
 							id: vetor
 						});
 
-						if (this.vetor === "chegada") {
-							this.pegarTrecho();
-						}
+						marker.addListener('dblclick', (event) => {
+
+							if (marker.id === "partida" && this.polilinhas.length > 0) {
+								Swal.fire({
+									title: 'Operação negada',
+									text: 'Não é possível apagar o local de partida nesse momento',
+									icon: 'error'
+								})
+
+								return;
+							}
+
+							if (marker.id === "partida") {
+								Swal.fire({
+									title: 'Apagar partida?',
+									text: 'Deseja continuar?',
+									icon: 'info',
+									showCancelButton: true,
+									confirmButtonColor: '#3085d6',
+									cancelButtonColor: '#d33',
+									confirmButtonText: 'Sim, desejo continuar!',
+								}).then(async (result) => {
+									if (result.isConfirmed) {
+										this.extremos = [];
+										marker.setMap(null);
+										overlay.setMap(null);
+									
+										Swal.fire('', 'Partida removida.', 'success')
+									}
+								});
+
+								return;
+							}
+
+							if (marker.id === "chegada") {
+								Swal.fire({
+									title: 'Apagar chegada?',
+									text: 'Deseja continuar?',
+									icon: 'info',
+									showCancelButton: true,
+									confirmButtonColor: '#3085d6',
+									cancelButtonColor: '#d33',
+									confirmButtonText: 'Sim, desejo continuar!',
+								}).then(async (result) => {
+									if (result.isConfirmed) {
+
+										this.initMap();
+										this.polilinhas.pop();
+										const ultimoPonto = this.polilinhas[this.polilinhas.length - 1].polilinha[0];
+										console.log(ultimoPonto)
+										if(this.polilinhas.length > 0)
+										{
+											this.adicionarPonto(ultimoPonto);
+										}else{
+											this.pontos = [];
+											this.adicionarPonto(new google.maps.latLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude));
+										}
+										
+										this.adicionarMarcador(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude, this.primeiroMarcador.nome, this.primeiroMarcador.vetor);
+									
+										Swal.fire('', 'Chegada removida.', 'success');
+									}
+								});
+
+								return;
+							}
+
+
+							
+						});					
 
 						this.map.setCenter(coords);
 						this.map.setZoom(17);
@@ -296,12 +368,17 @@
 						} = local[0];
 
 						if(this.vetor === "partida"){
-							this.extremos[0] = { latitude, longitude, nome, vetor: this.vetor }
+							this.primeiroMarcador = { latitude, longitude, nome, vetor: this.vetor }
+							this.extremos[0] = this.primeiroMarcador;
+							
 						}else{
 							this.extremos[1] = { latitude, longitude, nome, vetor: this.vetor }
 						}
 
 						this.extremos.forEach(el => {
+							const ponto = new google.maps.LatLng(el.latitude, el.longitude);
+							this.adicionarPonto(ponto);
+							this.pegarTrecho();
 							this.adicionarMarcador(el.latitude, el.longitude, el.nome, el.vetor);
 						})
 						
@@ -320,7 +397,10 @@
 						return google.maps.geometry.encoding.decodePath(points);
 					},
 					duploCliqueMapa(latLng) {
-						this.testarDadosDoFormulario()
+						if(!this.testarDadosDoFormulario()){
+							return;
+						}
+						
 						this.adicionarPonto(latLng);
 						this.pegarTrecho();
 					},
@@ -606,39 +686,38 @@
 
 						if (!this.gerencia){
 							mostrarAvisoCampoAusente('gerência');
-							this.pontos = [];
-							this.polilinhas = [];
-							return false
+
+		
+							return false;
 						}else if (!this.roteiro){
 							mostrarAvisoCampoAusente('roteiro');
-							this.pontos = [];
-							this.polilinhas = [];
-							return false
+			
+	
+							return false;
 						}else if (!this.lado){
 							mostrarAvisoCampoAusente('lado');
-							this.pontos = [];
-							this.polilinhas = [];
-							return false
+				
+
+							return false;
 						}else if(!this.opcao){
 							mostrarAvisoCampoAusente('opção');
-							this.pontos = [];
-							this.polilinhas = [];
-							return false
+	
+	
+							return false;
 						}else if(!this.vetor){
 							mostrarAvisoCampoAusente('partida');
-							this.pontos = [];
-							this.polilinhas = [];
-							return false
+
+		
+							return false;
 						}else if(!this.tipo){
 							mostrarAvisoCampoAusente('tipo');
-							this.pontos = [];
-							this.polilinhas = [];
-							return false
+
+							return false;
 						}else if(!this.local){
 							mostrarAvisoCampoAusente('local');
-							this.pontos = [];
-							this.polilinhas = [];
-							return false
+
+
+							return false;
 						}else{
 							return true
 						}
