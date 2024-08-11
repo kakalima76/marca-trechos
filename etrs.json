@@ -1,0 +1,11 @@
+[
+  {"tipo":"ETR","nome":"ETR MARECHAL","local":"Av. Brasil, n. 20.731 ","latitude":-22.8341073,"longitude":-43.3575039},
+  {"tipo":"ETR","nome":"ETR BANGU","local":"Av. Brasil,  n. 39.900 ","latitude":-22.8604091,"longitude":-43.5350541},
+  {"tipo":"ETR","nome":"ETR IRAJA","local":"Avenida Monsenhor Félix, n: 512 - Irajá","latitude":-22.8464536,"longitude":-43.3266396},
+  {"tipo":"ETR","nome":"CTR SEROPEDICA","local":"Estrada Santa Rosa - Chaperó, Seropédica","latitude":-22.7998335,"longitude":-43.7599144},
+  {"tipo":"ETR","nome":"ETR JPA","local":"Rua Américo de Souza Braga, n. 647","latitude":-229861859,"longitude":-43.4533242},
+  {"tipo":"ETR","nome":"ETR CAJU","local":"Rua Carlos Seidl, n. 1388","latitude":-22.8804306,"longitude":-43.2275776},
+  {"tipo":"ETR","nome":"ETR STA CRUZ","local":"Estrada da Pedra, n. 2.100","latitude":-22.9485852,"longitude":-43.6567654},
+  {"tipo":"ETR","nome":"CTR GRAMACHO","local":"Rua Guadalupe, nº 463 Jardim Gramacho - Duque de Caxias","latitude":-22.7495107,"longitude":-43.2666191},
+  {"tipo":"ETR","nome":"CTR GERICINO","local":"Estrada do Gericinó, s/nº - Gericinó ","latitude":-22.8472975,"longitude":-43.5138084}
+]

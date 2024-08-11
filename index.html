@@ -57,57 +57,97 @@
 						</label>
 						<div style="background-color: red; height: 20px; flex: 1;"></div>
 					</div>
-				</div>
-				<div class="form-group">
 					<div class="form-check" style="display: flex; align-items: center;">
-						<input class="form-check-input" type="radio" name="vetor" value="partida" id="radioPartida" v-model="vetor">
-						<label class="form-check-label" for="radioPartida" id="first1" style="flex: 1; text-align: left;">
-						Partida
+						<input class="form-check-input" type="radio" name="opcao" value="etr" id="radiuoEtr" v-model="opcao">
+						<label class="form-check-label" for="radioEtr" id="third" style="flex: 1; text-align: left;">
+						ETR
 						</label>
-						<div style="background-color: blue; height: 20px; flex: 1;"></div>
-					</div>
-					<div class="form-check" style="display: flex; align-items: center;">
-						<input class="form-check-input" type="radio" name="vetor" value="chegada" id="radioChegada" v-model="vetor">
-						<label class="form-check-label" for="radioChegada" id="second2" style="flex: 1; text-align: left;">
-						Chegada
-						</label>
-						<div style="background-color: red; height: 20px; flex: 1;"></div>
+						<div style="background-color: green; height: 20px; flex: 1;"></div>
 					</div>
 				</div>
-				<div class="form-group">
-					<label for="selectGerencia">Tipo</label>
-					<select class="form-control" id="selectTipo" v-model="tipo" :disabled="!vetor" @change="updateLocais">
-						<option value="" disabled selected>Selecione...</option>
-						<option v-for="tipo in tipos" :key="tipo" :value="tipo">{{ tipo }}</option>
-					</select>
-				</div>
-				<div class="form-group">
-					<label for="selectGerencia">Local</label>
-					<select class="form-control" id="selectLocal" v-model="local" :disabled="!tipo"  @change="criarPontoInicial">
-						<option value="" disabled selected>Selecione...</option>
-						<option v-for="item in filteredLocais" :key="item.nome" :value="item.nome">{{ item.nome }}</option>
-					</select>
-				</div>
-				<div class="form-group">
-					<label for="distanceDeslocamento">Deslocamento</label>
-					<input type="text" class="form-control" id="distanceDeslocamento" :value="formatarDeslocamento" disabled>
-				</div>
-				<div class="form-group">
-					<label for="distanceColeta">Coleta</label>
-					<input type="text" class="form-control" id="distanceColeta"  :value="formatarColeta" disabled>
-				</div>
-				<div class="form-group">
-					<label for="distanceTotal">Total</label>
-					<input type="text" class="form-control" id="distanceTotal" :value="formatarDistanciaTotal" disabled>
-				</div>
-				<div class="form-group row">
-					<div class="col">
-						<button class="btn btn-primary btn-block" @click="salvar">Confirmar</button>
+
+
+				<div v-if="opcao !== 'etr'">
+					<div class="form-group">
+						<div class="form-check" style="display: flex; align-items: center;">
+							<input class="form-check-input" type="radio" name="vetor" value="partida" id="radioPartida" v-model="vetor">
+							<label class="form-check-label" for="radioPartida" id="first1" style="flex: 1; text-align: left;">
+							Partida
+							</label>
+							<div style="background-color: blue; height: 20px; flex: 1;"></div>
+						</div>
+						<div class="form-check" style="display: flex; align-items: center;">
+							<input class="form-check-input" type="radio" name="vetor" value="chegada" id="radioChegada" v-model="vetor">
+							<label class="form-check-label" for="radioChegada" id="second2" style="flex: 1; text-align: left;">
+							Chegada
+							</label>
+							<div style="background-color: red; height: 20px; flex: 1;"></div>
+						</div>
 					</div>
-					<div class="col">
-						<button class="btn btn-secondary btn-block" id="btnExcluir" @click="excluir">Excluir</button>
+					<div class="form-group">
+						<label for="selectGerencia">Tipo</label>
+						<select class="form-control" id="selectTipo" v-model="tipo" :disabled="!vetor" @change="updateLocais">
+							<option value="" disabled selected>Selecione...</option>
+							<option v-for="tipo in tipos" :key="tipo" :value="tipo">{{ tipo }}</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="selectGerencia">Local</label>
+						<select class="form-control" id="selectLocal" v-model="local" :disabled="!tipo"  @change="criarPontoInicial">
+							<option value="" disabled selected>Selecione...</option>
+							<option v-for="item in filteredLocais" :key="item.nome" :value="item.nome">{{ item.nome }}</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="distanceDeslocamento">Deslocamento</label>
+						<input type="text" class="form-control" id="distanceDeslocamento" :value="formatarDeslocamento" disabled>
+					</div>
+					<div class="form-group">
+						<label for="distanceColeta">Coleta</label>
+						<input type="text" class="form-control" id="distanceColeta"  :value="formatarColeta" disabled>
+					</div>
+					<div class="form-group">
+						<label for="distanceTotal">Total</label>
+						<input type="text" class="form-control" id="distanceTotal" :value="formatarDistanciaTotal" disabled>
+					</div>
+					<div class="form-group row">
+						<div class="col">
+							<button class="btn btn-primary btn-block" @click="salvar">Confirmar</button>
+						</div>
+						<div class="col">
+							<button class="btn btn-secondary btn-block" id="btnExcluir" @click="excluir">Excluir</button>
+						</div>
 					</div>
 				</div>
+				<div v-else	="opcao === 'etr'">
+					<div class="form-group">
+						<label for="radioRetorno">Retornar para o mesmo local?</label>
+						<div class="form-check" style="display: flex; align-items: center;">
+							<input class="form-check-input" type="radio" name="retorno" value="true" id="radioRetorno" v-model="retorno">
+							<label class="form-check-label" for="radioRetorno" id="first3" style="flex: 1; text-align: left;">
+							sim
+							</label>
+						</div>
+						<div class="form-check" style="display: flex; align-items: center;">
+							<input class="form-check-input" type="radio" name="retorno" value="false" id="radioRetorno" v-model="retorno">
+							<label class="form-check-label" for="radioRetorno" id="first4" style="flex: 1; text-align: left;">
+							não
+							</label>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="selectedETR">Estação de tratamento de resíduos (ETR)</label>
+						<select class="form-control" id="selectedETR" v-model="local" @change="carregarMarcadorEtrs">
+							<option value="" disabled selected>Selecione...</option>
+							<option v-for="item in etrs" :key="item" :value="item">{{ item }}</option>
+						</select>
+					</div>
+
+					
+						
+				</div>
+				
 			</div>
 		</div>
 		<script>
@@ -130,6 +170,7 @@
 					tipos: [],
 					listaLocais: [],
 					locais: [],
+					etrs: [],
 					polilinhas: [],
 					gerencia: null,
 					roteiro: null,
@@ -149,10 +190,12 @@
 					primeiroMarcador: null,
 					segundoMarcador: null,
 					marcadores: [],
+					retorno: true,
 				},
 				mounted() {
 					this.loadGerencias();
 					this.loadLocais();
+					this.loadEtrs();
 				},
 				watch: {
 					polilinhas: function(newVal, oldVal) {
@@ -164,6 +207,12 @@
 						if (this.vetor == 'chegada') {
 							this.opcao = 'deslocamento';
 						}
+					},
+
+					pontos:  function(newVal, oldVal) {
+							if(this.opcao == 'etr'){
+								console.log(newVal, oldVal);
+							}
 					},
 
 				},
@@ -225,8 +274,10 @@
 					adicionarMarcador(lat, lng, label, vetor) {
 						const coords = new google.maps.LatLng(lat, lng);
 
+						console.log(vetor);
+
 						const customIcon = {
-							url: vetor === "partida" ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+							url: vetor === "partida" ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : vetor = "chegada" ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
 							scaledSize: new google.maps.Size(40, 40),
 							origin: new google.maps.Point(0, 0),
 							anchor: new google.maps.Point(10, 10),
@@ -414,6 +465,34 @@
 				
 
 					},
+					async carregarMarcadorEtrs(){
+						const index = this.listaLocais.findIndex(local => local.nome === this.local);
+						const etr = this.listaLocais[index];
+						const {nome, latitude, longitude} = etr;
+						console.log(latitude);
+						const latLng = new google.maps.LatLng(latitude, longitude);
+						console.log(latLng);
+						this.adicionarPonto(latLng);
+						this.adicionarMarcador(latitude, longitude, nome, 'etr');
+						this.pegarTrecho();
+						if(this.retorno){
+
+							const {lat, lng} = this.pontos[0];
+
+							this.pontos[1] = {lat, lng};
+	
+							
+							this.pontos[0] = {
+								lat: latitude,
+								lng: longitude
+							}
+
+							await this.pegarTrecho();
+
+
+						}
+						
+					},
 					closePopup() {
 						this.isPopupVisible = false;
 					},
@@ -473,6 +552,7 @@
 						const origin = `${this.pontos[0].lat},${this.pontos[0].lng}`;
 						const destination = `${this.pontos[1].lat},${this.pontos[1].lng}`;
 						const queryParams = `origin=${origin}&destination=${destination}`
+						console.log(queryParams);
 						return queryParams;
 					},
 					decodificarOverwiewPolyline(points) {
@@ -599,7 +679,7 @@
 							});
 					},
 					loadLocais() {
-						fetch('locais.json')
+						fetch('dados.json')
 							.then(response => response.json())
 							.then(data => {
 								const tipos = new Set();
@@ -616,7 +696,22 @@
 
 								this.locais = Array.from(locais);
 								this.tipos = Array.from(tipos);
+								console.log(tipos);
 								this.listaLocais = Array.from(listaLocais);
+							});
+					},
+					loadEtrs() {
+						fetch('./etrs.json')
+							.then(response => response.json())
+							.then(data => {
+								const etrs = new Set();
+								data.forEach(item => {
+									if(item.tipo == 'ETR'){
+										etrs.add(item.nome);
+									}									
+								});
+
+								this.etrs = Array.from(etrs);
 							});
 					},
 					mudarParaColeta(uid, infowindow) {
@@ -671,6 +766,8 @@
 						}
 
 						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
+
+						console.log(url);
 
 						axios.get(url)
 							.then(response => {
@@ -764,7 +861,7 @@
 							const polylineOptions = {
 								path: polylineObj.polilinha,
 								geodesic: true,
-								strokeColor: polylineObj.opcao === 'deslocamento' ? 'blue' : 'red',
+								strokeColor: polylineObj.opcao === 'deslocamento' ? 'blue' : polylineObj.opcao === 'coleta' ? 'red' : 'green',
 								strokeOpacity: 1.0,
 								strokeWeight: polylineObj.opcao === 'deslocamento' ? 4 : 5,
 								icons: polylineObj.opcao === 'deslocamento' ? [{
