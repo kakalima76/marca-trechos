@@ -909,7 +909,7 @@
 						this.polilinhas.forEach((polylineObj, index) => {
 							const ultimaPosicao = polylineObj.polilinha.length - 1;
 							const ponto = polylineObj.polilinha[ultimaPosicao];
-							const {div, marker} = this.criarIconeGoogleMaps(index, this.map, ponto.lat(), ponto.lng());
+							const {div, marker} = this.criarIconeGoogleMaps(index + 1, this.map, ponto.lat(), ponto.lng());
 							
 
 							const polylineOptions = {
