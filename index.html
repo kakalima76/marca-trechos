@@ -324,7 +324,7 @@
 							*/
 
 							if (marker.id === 'partida' && this.polilinhas.length > 1) {
-								alert('Não é possível remover o marcador inicial de partida');
+								Swal.fire("aviso", "Não é possível remover o marcador inicial de partida", "warning")
 								return;
 							}
 
@@ -862,7 +862,7 @@
 								const len = this.polilinhas.length;
 
 								if (index !== len - 1) {
-									alert("Não é possível remover o trecho");
+									Swal.fire("aviso", "Não é possível remover o trecho", "warning");
 									return;
 								}
 
