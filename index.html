@@ -99,8 +99,12 @@
 						</select>
 					</div>
 					<div class="form-group">
-						<label for="distanceDeslocamento">Deslocamento</label>
+						<label for="distanceDeslocamento">Deslocamento entre coletas</label>
 						<input type="text" class="form-control" id="distanceDeslocamento" :value="formatarDeslocamento" disabled>
+					</div>
+					<div class="form-group">
+						<label for="distanceDeslocamento">Deslocamento ETR</label>
+						<input type="text" class="form-control" id="distanceETR" :value="formatarETR" disabled>
 					</div>
 					<div class="form-group">
 						<label for="distanceColeta">Coleta</label>
@@ -181,6 +185,7 @@
 					deslocamento: 0,
 					coleta: 0,
 					distancia: 0,
+					etr: 0,
 					distanciaTotal: 0,
 					inicio: null,
 					fim: null,
@@ -207,13 +212,7 @@
 						if (this.vetor == 'chegada') {
 							this.opcao = 'deslocamento';
 						}
-					},
-
-					pontos:  function(newVal, oldVal) {
-							if(this.opcao == 'etr'){
-								console.log(newVal, oldVal);
-							}
-					},
+					}
 
 				},
 
@@ -273,8 +272,6 @@
 					},
 					adicionarMarcador(lat, lng, label, vetor) {
 						const coords = new google.maps.LatLng(lat, lng);
-
-						console.log(vetor);
 
 						const customIcon = {
 							url: vetor === "partida" ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : vetor = "chegada" ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
@@ -468,14 +465,19 @@
 					async carregarMarcadorEtrs(){
 						const index = this.listaLocais.findIndex(local => local.nome === this.local);
 						const etr = this.listaLocais[index];
+
+						if(!etr){
+							return;
+						}
+								
 						const {nome, latitude, longitude} = etr;
-						console.log(latitude);
 						const latLng = new google.maps.LatLng(latitude, longitude);
-						console.log(latLng);
 						this.adicionarPonto(latLng);
 						this.adicionarMarcador(latitude, longitude, nome, 'etr');
 						this.pegarTrecho();
-						if(this.retorno){
+						if(this.retorno === true){
+
+							console.log(this.retorno);
 
 							const {lat, lng} = this.pontos[0];
 
@@ -495,6 +497,45 @@
 					},
 					closePopup() {
 						this.isPopupVisible = false;
+					},
+					criarIconeGoogleMaps(text, map, lat, long) {
+							const position = new google.maps.LatLng(lat, long);
+							const div = document.createElement('div');
+							div.style.backgroundColor = '#1E90FF';
+							div.style.color = '#FFFFFF';
+							div.style.borderRadius = '50%';
+							div.style.width = '21px';
+							div.style.height = '21px';
+							div.style.display = 'flex';
+							div.style.alignItems = 'center';
+							div.style.justifyContent = 'center';
+							div.style.fontSize = '14px';
+							div.style.position = 'absolute';
+							div.style.zIndex = '1000';  // Garante que o ícone esteja sobre a polilinha
+							div.textContent = text;
+
+							const customIcon = new google.maps.OverlayView();
+							customIcon.onAdd = function() {
+									const layer = this.getPanes().overlayMouseTarget; // Garante que o overlay interaja com o mouse
+									layer.appendChild(div);
+							};
+							customIcon.draw = function() {
+									const projection = this.getProjection();
+									const pos = projection.fromLatLngToDivPixel(position);
+									div.style.left = (pos.x - parseInt(div.style.width) / 2) + 'px';
+									div.style.top = (pos.y - parseInt(div.style.height) / 2) + 'px';
+							};
+							customIcon.onRemove = function() {
+									if (div.parentNode) {
+											div.parentNode.removeChild(div);
+									}
+							};
+							customIcon.setMap(map);
+
+							return {
+									div: div,          // Referência à div criada
+									marker: customIcon // Referência ao customIcon (marcador)
+							};
 					},
 					criarPontoInicial() {
 						const local = this.listaLocais.filter(item => item.nome === this.local);
@@ -552,7 +593,6 @@
 						const origin = `${this.pontos[0].lat},${this.pontos[0].lng}`;
 						const destination = `${this.pontos[1].lat},${this.pontos[1].lng}`;
 						const queryParams = `origin=${origin}&destination=${destination}`
-						console.log(queryParams);
 						return queryParams;
 					},
 					decodificarOverwiewPolyline(points) {
@@ -593,6 +633,10 @@
 
 						if (this.opcao == 'coleta') {
 							this.coleta = this.coleta + value;
+						}
+
+						if (this.opcao == 'etr') {
+							this.etr = this.etr + value;
 						}
 
 						this.distanciaTotal = this.deslocamento + this.coleta;
@@ -696,7 +740,6 @@
 
 								this.locais = Array.from(locais);
 								this.tipos = Array.from(tipos);
-								console.log(tipos);
 								this.listaLocais = Array.from(listaLocais);
 							});
 					},
@@ -767,15 +810,20 @@
 
 						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/directions?${this.criarQueryParams()}`
 
-						console.log(url);
-
 						axios.get(url)
 							.then(response => {
 								this.extrairDadosDoPayload(response.data);
 							})
 							.catch(error => console.log(error));
 					},
-					removerTrecho(uid, poly, infowindow) {
+					removerTrecho(uid, poly, infowindow, div, marker) {
+
+						function removerMarcador(customIcon, div) {
+								customIcon.setMap(null);  // Remove o marcador do mapa
+								if (div.parentNode) {
+										div.parentNode.removeChild(div);  // Remove o elemento div do DOM
+								}
+						}
 
 						if(this.segundoMarcador !== null){
 							Swal.fire("Atenção","Operação negada", "warning" );
@@ -794,7 +842,7 @@
 							if (result.isConfirmed) {
 								/*
 									Remover a polilinha da lista de polilinhas e do mapa.
-									S;o será permitido remover a última linha da lista de polilinhas.
+									Só será permitido remover a última linha da lista de polilinhas.
 								*/
 
 								const index = this.polilinhas.findIndex(obj => obj.uid === uid);
@@ -819,6 +867,7 @@
 								}
 
 								poly.setMap(null);
+								removerMarcador(marker, div);
 								this.polilinhas.pop()
 
 								/*
@@ -858,13 +907,18 @@
 
 						// Adicionar novas polilines ao mapa
 						this.polilinhas.forEach((polylineObj, index) => {
+							const ultimaPosicao = polylineObj.polilinha.length - 1;
+							const ponto = polylineObj.polilinha[ultimaPosicao];
+							const {div, marker} = this.criarIconeGoogleMaps(index, this.map, ponto.lat(), ponto.lng());
+							
+
 							const polylineOptions = {
 								path: polylineObj.polilinha,
 								geodesic: true,
 								strokeColor: polylineObj.opcao === 'deslocamento' ? 'blue' : polylineObj.opcao === 'coleta' ? 'red' : 'green',
 								strokeOpacity: 1.0,
 								strokeWeight: polylineObj.opcao === 'deslocamento' ? 4 : 5,
-								icons: polylineObj.opcao === 'deslocamento' ? [{
+								icons: (polylineObj.opcao !== 'coleta') ? [{
 									icon: {
 										path: 'M 0,-1 0,1',
 										strokeOpacity: 1,
@@ -898,7 +952,10 @@
 								const button3 = document.createElement('button');
 								button3.textContent = 'Remover trecho';
 								button3.dataset.uid = uid;
-								button3.onclick = () => this.removerTrecho(uid, polyline, infowindow);
+								button3.onclick = () => {
+									
+									this.removerTrecho(uid, polyline, infowindow, div, marker)
+								};
 
 								contentDiv.appendChild(button1);
 								contentDiv.appendChild(button2);
@@ -913,7 +970,7 @@
 
 							});
 							polyline.setMap(this.map);
-							polylineObj.polyline = polyline;
+							// polylineObj.polyline = polyline;
 						});
 					},
 					salvar() {
@@ -994,6 +1051,9 @@
 					},
 					formatarDeslocamento() {
 						return this.formataMedidas(this.deslocamento);
+					},
+					formatarETR() {
+						return this.formataMedidas(this.etr);
 					},
 					formatarColeta() {
 						return this.formataMedidas(this.coleta);
