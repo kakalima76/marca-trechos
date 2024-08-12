@@ -44,21 +44,21 @@
 				</div>
 				<div class="form-group">
 					<div class="form-check" style="display: flex; align-items: center;">
-						<input class="form-check-input" type="radio" name="opcao" value="deslocamento" id="radioDeslocamento" v-model="opcao">
+						<input class="form-check-input" type="radio" name="opcao" value="deslocamento" id="radioDeslocamento" v-model="opcao" :disabled="roteiro === null">
 						<label class="form-check-label" for="radioDeslocamento" id="first" style="flex: 1; text-align: left;">
 						Deslocamento
 						</label>
 						<div style="background-color: blue; height: 20px; flex: 1;"></div>
 					</div>
 					<div class="form-check" style="display: flex; align-items: center;">
-						<input class="form-check-input" type="radio" name="opcao" value="coleta" id="radioColeta" v-model="opcao">
+						<input class="form-check-input" type="radio" name="opcao" value="coleta" id="radioColeta" v-model="opcao" :disabled="roteiro === null">
 						<label class="form-check-label" for="radioColeta" id="second" style="flex: 1; text-align: left;">
 						Coleta
 						</label>
 						<div style="background-color: red; height: 20px; flex: 1;"></div>
 					</div>
 					<div class="form-check" style="display: flex; align-items: center;">
-						<input class="form-check-input" type="radio" name="opcao" value="etr" id="radiuoEtr" v-model="opcao">
+						<input class="form-check-input" type="radio" name="opcao" value="etr" id="radiuoEtr" v-model="opcao" :disabled="roteiro === null">
 						<label class="form-check-label" for="radioEtr" id="third" style="flex: 1; text-align: left;">
 						ETR
 						</label>
@@ -70,14 +70,14 @@
 				<div v-if="opcao !== 'etr'">
 					<div class="form-group">
 						<div class="form-check" style="display: flex; align-items: center;">
-							<input class="form-check-input" type="radio" name="vetor" value="partida" id="radioPartida" v-model="vetor">
+							<input class="form-check-input" type="radio" name="vetor" value="partida" id="radioPartida" v-model="vetor" :disabled="opcao === null">
 							<label class="form-check-label" for="radioPartida" id="first1" style="flex: 1; text-align: left;">
 							Partida
 							</label>
 							<div style="background-color: blue; height: 20px; flex: 1;"></div>
 						</div>
 						<div class="form-check" style="display: flex; align-items: center;">
-							<input class="form-check-input" type="radio" name="vetor" value="chegada" id="radioChegada" v-model="vetor">
+							<input class="form-check-input" type="radio" name="vetor" value="chegada" id="radioChegada" v-model="vetor" :disabled="local === null">
 							<label class="form-check-label" for="radioChegada" id="second2" style="flex: 1; text-align: left;">
 							Chegada
 							</label>
@@ -584,7 +584,8 @@
 
 								}
 						}catch(e){
-							Swal.fire('Erro no sistema', 'Repita a operação.', 'error');
+							Swal.fire('Erro no sistema', 'Repita a operação.', 'error')
+							.then(location.reload());
 						}
 
 						
@@ -644,7 +645,7 @@
 							this.etr = this.etr + value;
 						}
 
-						this.distanciaTotal = this.deslocamento + this.coleta;
+						this.distanciaTotal = this.deslocamento + this.coleta + this.etr;
 						this.distancia = value;
 
 						this.inicio = start_address;
@@ -656,8 +657,6 @@
 							fim: this.fim,
 							polilinha: this.polilinha,
 							distancia: this.distancia,
-							gerecia: this.gerencia,
-							roteiro: this.roteiro,
 							lado: this.lado,
 							opcao: this.opcao,
 							uid: this.gerarUUIDv4(),
@@ -979,15 +978,48 @@
 						});
 					},
 					async salvar() {
+						const url = `https://laboratorio-python-fczdesenvolvime.replit.app/coordenadas`;
+						let response;
 
-						if(!this.primeiroMarcador || !this.segundoMarcador){
+						if(!this.primeiroMarcador || !this.segundoMarcador || this.polilinha.lenght === 0){
 							Swal.fire('Aviso', 'Crie uma rota completa antes de salvar', 'warning');
 							return
 						}
+
+						if(!this.testarDadosDoFormulario()){
+							return;
+						}
+
+
 						
-						for(let poly  of this.polilinhas){
-							poly.polilinha = google.maps.geometry.encoding.encodePath(poly.polilinha);
-							console.log(poly);
+						for(let data  of this.polilinhas){
+							
+							data.polilinha = google.maps.geometry.encoding.encodePath(data.polilinha);
+							data.gerencia = this.gerencia;
+							data.roteiro = this.roteiro;
+							console.log(data);
+							
+							const config = {
+								url,
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								data
+							}
+
+							try{
+								response = await axios(config);
+								console.log(response.status);
+							}catch(e){
+								Swal.fire('Erro no servidor', e.message, 'error');
+							}
+
+							if(response.status === 200 || response.status === 201){
+								Swal.fire('Sucesso', 'Dados salvos com sucesso', 'success')
+								.then(location.reload());
+							}
+								
 						}
 					},
 					testarDadosDoFormulario() {
