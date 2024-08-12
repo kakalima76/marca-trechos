@@ -273,8 +273,22 @@
 					adicionarMarcador(lat, lng, label, vetor) {
 						const coords = new google.maps.LatLng(lat, lng);
 
-						const customIcon = {
-							url: vetor === "partida" ? 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' : vetor = "chegada" ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+
+						let url = null;
+
+							switch (vetor) {
+								case "partida":
+									url =  'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+									break;
+								case "chegada":
+									url = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' ;
+									break;
+								default:
+									url = 'https://maps.google.com/mapfiles/ms/icons/green-dot.png';
+							}
+
+						const customIcon = {						
+							url,
 							scaledSize: new google.maps.Size(40, 40),
 							origin: new google.maps.Point(0, 0),
 							anchor: new google.maps.Point(10, 10),
@@ -344,9 +358,14 @@
 							Para apagar a última polilinha, apagamos também a último trecho que concudia até ele
 							*/
 
+							console.log(marker);
+
 							if (marker.id === 'chegada') {
+								console.log('até aqui');
 								this.apagarMarcadorChegada(marker, overlay);
 							}
+
+
 						});
 
 						this.map.setCenter(coords);
