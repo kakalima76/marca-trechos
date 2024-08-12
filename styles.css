@@ -88,3 +88,41 @@
     width: 30%;
   }
 }
+
+
+.linha-tracejada-azul {
+  border-top: 2px dashed blue;
+  width: 50%;
+  margin-left: 10px;
+}
+
+.linha-vermelha {
+  border-top: 2px solid red;
+  width: 50%;
+  margin-left: 10px;
+}
+
+.linha-tracejada-verde {
+  border-top: 2px dashed green;
+  width: 50%;
+  margin-left: 10px;
+}
+
+.marcadorPartida, .marcadorChegada {
+  height: 20px;
+  width: 30%; /* Ocupa 30% da largura do elemento pai */
+  background-repeat: no-repeat;
+  background-position: left;
+  background-size: contain;
+  margin-left: 50%; /* Posiciona na metade do elemento pai */
+  transform: translateX(-50%); /* Move o elemento 50% para a esquerda para alinhar ao centro */
+}
+
+.marcadorPartida {
+  background-image: url('/partida.jpg');
+}
+
+.marcadorChegada {
+  background-image: url('/chegada.jpg');
+}
+
