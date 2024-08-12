@@ -545,44 +545,49 @@
 							nome
 						} = local[0];
 
-						if (this.vetor === "partida") {
-							this.primeiroMarcador = {
-								latitude,
-								longitude,
-								nome,
-								vetor: this.vetor
-							}
-							const ponto = new google.maps.LatLng(latitude, longitude);
-							this.adicionarPonto(ponto);
-							this.adicionarMarcador(latitude, longitude, nome, this.vetor);
+						try {
+								if (this.vetor === "partida") {
+									this.primeiroMarcador = {
+										latitude,
+										longitude,
+										nome,
+										vetor: this.vetor
+									}
+									const ponto = new google.maps.LatLng(latitude, longitude);
+									this.adicionarPonto(ponto);
+									this.adicionarMarcador(latitude, longitude, nome, this.vetor);
 
-						} else {
-							this.segundoMarcador = {
-								latitude,
-								longitude,
-								nome,
-								vetor: this.vetor
-							}
-							const pontoPartida = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
-							const pontoChegada = new google.maps.LatLng(this.segundoMarcador.latitude, this.segundoMarcador.longitude);
-							this.adicionarMarcador(latitude, longitude, nome, this.vetor);
+								} else {
+									this.segundoMarcador = {
+										latitude,
+										longitude,
+										nome,
+										vetor: this.vetor
+									}
+									const pontoPartida = new google.maps.LatLng(this.primeiroMarcador.latitude, this.primeiroMarcador.longitude);
+									const pontoChegada = new google.maps.LatLng(this.segundoMarcador.latitude, this.segundoMarcador.longitude);
+									this.adicionarMarcador(latitude, longitude, nome, this.vetor);
 
-							if (this.polilinhas.length > 0) {
-								const polys = this.polilinhas[this.polilinhas.length - 1]
-								const {
-									polilinha
-								} = polys;
-								this.adicionarPonto(polilinha[polilinha.length - 1]);
-								this.adicionarPonto(pontoChegada);
-								this.pegarTrecho();
-							} else {
-								this.adicionarPonto(pontoPartida);
-								this.adicionarPonto(pontoChegada);
-								this.pegarTrecho();
-							}
+									if (this.polilinhas.length > 0) {
+										const polys = this.polilinhas[this.polilinhas.length - 1]
+										const {
+											polilinha
+										} = polys;
+										this.adicionarPonto(polilinha[polilinha.length - 1]);
+										this.adicionarPonto(pontoChegada);
+										this.pegarTrecho();
+									} else {
+										this.adicionarPonto(pontoPartida);
+										this.adicionarPonto(pontoChegada);
+										this.pegarTrecho();
+									}
 
+								}
+						}catch(e){
+							Swal.fire('Erro no sistema', 'Repita a operação.', 'error');
 						}
 
+						
 
 					},
 					criarQueryParams() {
@@ -973,11 +978,17 @@
 							// polylineObj.polyline = polyline;
 						});
 					},
-					salvar() {
-						console.log('Gerência:', this.gerencia);
-						console.log('Roteiro:', this.roteiro);
-						console.log('Lado:', this.lado);
-						console.log('Opção:', this.opcao);
+					async salvar() {
+
+						if(!this.primeiroMarcador || !this.segundoMarcador){
+							Swal.fire('Aviso', 'Crie uma rota completa antes de salvar', 'warning');
+							return
+						}
+						
+						for(let poly  of this.polilinhas){
+							poly.polilinha = google.maps.geometry.encoding.encodePath(poly.polilinha);
+							console.log(poly);
+						}
 					},
 					testarDadosDoFormulario() {
 
