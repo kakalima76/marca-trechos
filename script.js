@@ -493,6 +493,29 @@ const app = new Vue({
 
       this.polilinhas.push(obj);
     },
+    exportarTabelaParaExcel() {
+      const dados = this.polilinhas.map((polilinha, index) => ({
+        "#": index + 1,
+        Logradouros: polilinha.inicio,
+        Opção: polilinha.opcao,
+        Laitude: polilinha.polilinha[0].lat(),
+        Longitude: polilinha.polilinha[0].lng(),
+      }));
+
+      const planilha = XLSX.utils.json_to_sheet(dados);
+      const pastaDeTrabalho = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(
+        pastaDeTrabalho,
+        planilha,
+        "Dados da Tabela"
+      );
+
+      // Gerar o arquivo Excel e baixar
+      XLSX.writeFile(
+        pastaDeTrabalho,
+        `${this.gerencia + "-" + this.roteiro}.xlsx`
+      );
+    },
     excluir() {
       console.log("Excluído os valores:");
       console.log("Gerência:", this.gerencia);
@@ -573,7 +596,7 @@ const app = new Vue({
         });
     },
     loadEtrs() {
-        console.log(this.base)
+      console.log(this.base);
       fetch(`${this.base}/etrs`)
         .then((response) => response.json())
         .then((data) => {
@@ -861,7 +884,12 @@ const app = new Vue({
     },
     testarDadosDoFormulario() {
       async function mostrarAvisoCampoAusente(campo) {
-        Swal.fire("Oops!", `Preencha o campo ${campo}`, "error");
+        Swal.fire("Oops!", `Preencha o campo ${campo}`, "warning");
+      }
+
+      if (!!this.segundoMarcador) {
+        Swal.fire("Oops!", `Essa rota já foi finalizada`, "warning");
+        return;
       }
 
       if (!this.gerencia) {
@@ -911,9 +939,6 @@ const app = new Vue({
     updateRoteiros() {
       this.roteiro = ""; // Reset the selected roteiro
     },
-    imprimirMensagem() {
-        console.log('Olá, mundo!');
-    }
   },
   computed: {
     filteredRoteiros() {

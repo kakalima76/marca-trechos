@@ -8,14 +8,14 @@ body, html {
   height: 100%;
 }
 #map {
-  flex: 1;
+  flex: 1; /* Mapa ocupa 75% da altura da tela */
 }
 .table-container {
-  flex: 0 0 25%;
+  flex: 0 0 25%; /* Tabela ocupa 25% da altura da tela */
   overflow-y: auto;
 }
 
-.popup {
+ .popup {
  display: none;
  position: absolute;
  top: 10px;
@@ -26,13 +26,13 @@ body, html {
  padding: 20px;
  border-radius: 5px;
  z-index: 10;
- max-height: 80vh;
- overflow-y: auto;
-}
-.show {
+ max-height: 80vh; /* Define a altura máxima da div */
+ overflow-y: auto;  /* Adiciona a rolagem vertical */
+ }
+ .show {
  display: block !important;
-}
-.custom-map-control-button {
+ }
+ .custom-map-control-button {
  background-color: #d4f7d4;
  border: none;
  outline: none;
@@ -43,26 +43,26 @@ body, html {
  cursor: pointer;
  margin-right: 10px;
  margin-top: 10px;
-}
-.custom-map-control-button:hover {
+ }
+ .custom-map-control-button:hover {
  background-color: #ebebeb;
-}
+ }
 
 .popup {
-  width: 75%;
-  margin: 0 auto;
-  opacity: 0;
-  transition: opacity 2s ease-in-out;
+  width: 75%; /* Padrão para dispositivos pequenos */
+  margin: 0 auto; /* Centraliza o popup horizontalmente */
+  opacity: 0; /* Inicia com opacidade 0 */
+  transition: opacity 2s ease-in-out; /* Transição para opacidade */
 }
 
 .popup.show {
-  opacity: 1;
+  opacity: 1; /* Quando a classe show é adicionada, a opacidade é 1 */
 }
 
 .popup-content {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: column; /* Alinha os botões verticalmente */
+  gap: 10px; /* Espaço entre os botões */
 }
 .popup-content button {
   padding: 10px;
@@ -71,13 +71,13 @@ body, html {
   border: none;
   cursor: pointer;
   border-radius: 5px;
-  width: 100%;
+  width: 100%; /* Faz os botões ocuparem toda a largura do container */
 }
 
 .map-marker-label {
-  background-color: black;
-  color: white;
-  border: 1px solid white;
+  background-color: black; /* Fundo preto */
+  color: white; /* Texto branco */
+  border: 1px solid white; /* Borda branca para melhor visibilidade */
   padding: 2px 5px;
   position: absolute;
   transform: translate(-50%, -100%);
@@ -85,16 +85,19 @@ body, html {
 }
 
 @media (min-width: 576px) {
+  /* Para dispositivos médios */
   .popup {
     width: 50%;
   }
 }
 
 @media (min-width: 992px) {
+  /* Para dispositivos grandes */
   .popup {
     width: 30%;
   }
 }
+
 
 .linha-tracejada-azul {
   border-top: 2px dashed blue;
@@ -116,23 +119,21 @@ body, html {
 
 .marcadorPartida, .marcadorChegada {
   height: 20px;
-  width: 30%;
+  width: 30%; /* Ocupa 30% da largura do elemento pai */
   background-repeat: no-repeat;
   background-position: left;
   background-size: contain;
-  margin-left: 50%;
-  transform: translateX(-50%);
-}
-
-.marcadorChegada {
-  background-image: url('./_chegada.jpg');
+  margin-left: 50%; /* Posiciona na metade do elemento pai */
+  transform: translateX(-50%); /* Move o elemento 50% para a esquerda para alinhar ao centro */
 }
 
 .marcadorPartida {
   background-image: url('./partida.jpg');
 }
 
-
+.marcadorChegada {
+  background-image: url('./chegada.jpg');
+}
 
 .print-btn {
   background-color: transparent;
@@ -143,13 +144,15 @@ body, html {
 }
 
 .icon-hover {
-  color: #191970;
-  transition: color 0.3s ease;
-  font-size: 20px;
+  color: #191970; /* Cor padrão do ícone */
+  transition: color 0.3s ease; /* Suaviza a transição de cor */
+  font-size: 20px; /* Tamanho do ícone */
 }
 
 .print-btn:hover .icon-hover {
-  color: #00BFFF;
+  color: #00BFFF	; /* Altera a cor para vermelho no hover */
 }
 
-.print-btn
+.print-btn:active .icon-hover {
+  color: red; /* Altera a cor para vermelho ao clicar */
+}
