@@ -58,7 +58,6 @@ const app = new Vue({
       }
     },
   },
-
   methods: {
     initMap() {
       this.map = new google.maps.Map(document.getElementById("map"), {
@@ -311,6 +310,53 @@ const app = new Vue({
         }
       });
     },
+    buscarRoteiro() {
+      const url = `${this.base}/marcadores/${this.gerencia}/${this.roteiro}`;
+
+      axios
+        .get(url)
+        .then((response) => {
+          const { status, data } = response;
+          if (status === 200 || status === 201) {
+            data.forEach((d) => {
+              const { latitude, longitude, nome, vetor } = d;
+              console.log(d);
+              this.primeiroMarcador = d;
+
+              this.adicionarMarcador(
+                parseFloat(d.latitude),
+                parseFloat(d.longitude),
+                d.nome,
+                d.vetor
+              );
+
+              vetor === "partida"
+                ? (this.primeiroMarcador = d)
+                : (this.segundoMarcador = d);
+            });
+          }
+        })
+        .then((data) => {
+          const url = `${this.base}/coordenadas/${this.gerencia}/${this.roteiro}`;
+          axios
+            .get(url)
+            .then((response) => {
+              const { data, status } = response;
+              if (status === 200 || status === 201) {
+                data.forEach((d) => {
+                  d.polilinha = this.decodificarOverwiewPolyline(d.polilinha);
+                  this.polilinhas.push(d);
+                });
+              }
+            })
+            .catch((error) =>
+              Swal.fire("Erro no servidor", error.message, "error")
+            );
+        })
+        .catch((error) =>
+          Swal.fire("Erro no servidor", error.message, "error")
+        );
+    },
     async carregarMarcadorEtrs() {
       const index = this.listaLocais.findIndex(
         (local) => local.nome === this.local
@@ -327,8 +373,6 @@ const app = new Vue({
       this.adicionarMarcador(latitude, longitude, nome, "etr");
       this.pegarTrecho();
       if (this.retorno === true) {
-        console.log(this.retorno);
-
         const { lat, lng } = this.pontos[0];
 
         this.pontos[1] = { lat, lng };
@@ -338,8 +382,32 @@ const app = new Vue({
           lng: longitude,
         };
 
-        await this.pegarTrecho();
+        this.pegarTrecho();
       }
+
+      const marcador = {
+        roteiro: this.roteiro,
+        gerencia: this.gerencia,
+        nome,
+        latitude,
+        longitude,
+        vetor: "etr",
+      };
+
+      const url = `${this.base}/marcadores`;
+
+      const config = {
+        url,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: marcador,
+      };
+
+      await axios(config).catch((error) =>
+        Swal.fire("Erro", error.message, "error")
+      );
     },
     closePopup() {
       this.isPopupVisible = false;
@@ -494,6 +562,10 @@ const app = new Vue({
       this.polilinhas.push(obj);
     },
     exportarTabelaParaExcel() {
+      if (!this.testarDadosDoFormulario()) {
+        return;
+      }
+
       const dados = this.polilinhas.map((polilinha, index) => ({
         "#": index + 1,
         Logradouros: polilinha.inicio,
@@ -517,11 +589,60 @@ const app = new Vue({
       );
     },
     excluir() {
-      console.log("Excluído os valores:");
-      console.log("Gerência:", this.gerencia);
-      console.log("Roteiro:", this.roteiro);
-      console.log("Lado:", this.lado);
-      console.log("Opção:", this.opcao);
+      const url = `${this.base}/marcadores/${this.gerencia}/${this.roteiro}`;
+
+      const config = {
+        url,
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+
+      Swal.fire({
+        title: "Deseja remover esse roteiro?",
+        text: "Essa ação não poderá ser desfeita",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sim, faça isso!",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          axios(config)
+            .then(() => {
+              const url = `${this.base}/marcadores/${this.gerencia}/${this.roteiro}`;
+              const config = {
+                url,
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              };
+            })
+            .then(() => {
+              const url = `${this.base}/coordenadas/${this.gerencia}/${this.roteiro}`;
+              const config = {
+                url,
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              };
+
+              axios(config)
+                .then(() => {
+                  Swal.fire(
+                    "Sucesso",
+                    "Trechos removidos com sucesso",
+                    "success"
+                  ).then(() => location.reload());
+                })
+                .catch((error) => Swal.fire("Erro", error.message, "error"));
+            })
+            .catch((error) => Swal.fire("Erro", error.message, "error"));
+        }
+      });
     },
     formataMedidas(medida) {
       const unidade = medida === 0 ? "metro" : medida < 1000 ? "metros" : "km";
@@ -835,7 +956,7 @@ const app = new Vue({
       });
     },
     async salvar() {
-      const url = `https://laboratorio-python-fczdesenvolvime.replit.app/coordenadas`;
+      const url = `${this.base}/coordenadas`;
       let response;
 
       if (
@@ -844,10 +965,6 @@ const app = new Vue({
         this.polilinha.lenght === 0
       ) {
         Swal.fire("Aviso", "Crie uma rota completa antes de salvar", "warning");
-        return;
-      }
-
-      if (!this.testarDadosDoFormulario()) {
         return;
       }
 
@@ -876,9 +993,70 @@ const app = new Vue({
         }
 
         if (response.status === 200 || response.status === 201) {
-          Swal.fire("Sucesso", "Dados salvos com sucesso", "success").then(
-            location.reload()
-          );
+          Swal.fire("Sucesso", "Trechos salvos com sucesso", "success")
+            .then(async () => {
+              const { latitude, longitude, nome, vetor } =
+                this.primeiroMarcador;
+
+              const marcador = {
+                gerencia: this.gerencia,
+                roteiro: this.roteiro,
+                latitude,
+                longitude,
+                nome,
+                vetor,
+              };
+
+              const url = `${this.base}/marcadores`;
+
+              const config = {
+                url,
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                data: marcador,
+              };
+
+              await axios(config).catch((error) =>
+                Swal.fire("Erro", error.message, "error")
+              );
+            })
+            .then(async () => {
+              const { latitude, longitude, nome, vetor } = this.segundoMarcador;
+
+              const marcador = {
+                gerencia: this.gerencia,
+                roteiro: this.roteiro,
+                latitude,
+                longitude,
+                nome,
+                vetor,
+              };
+
+              const url = `${this.base}/marcadores`;
+
+              const config = {
+                url,
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                data: marcador,
+              };
+
+              await axios(config)
+                .then(() => {
+                  Swal.fire(
+                    "Sucesso",
+                    "Marcadores salvos com sucesso",
+                    "success"
+                  ).then(() => {
+                    location.reload();
+                  });
+                })
+                .catch((error) => Swal.fire("Erro", error.message, "error"));
+            });
         }
       }
     },

@@ -1,372 +1,373 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Vue.js with Google Maps</title>
-		<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
-		<link
-			rel="stylesheet"
-			href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-		/>
-		<link rel="stylesheet" href="styles.css" />
-		<link
-			rel="stylesheet"
-			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-		/>
-		<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-		<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-	</head>
-	<body>
-		<div id="app">
-			<div id="map"></div>
-			<div class="popup container mt-5" :class="{show: isPopupVisible}">
-				<div class="form-group">
-					<label for="address">Endereço</label>
-					<input
-						type="text"
-						class="form-control"
-						id="address"
-						placeholder="Digite um endereço"
-					/>
-				</div>
-				<div class="form-group">
-					<label for="selectGerencia">Gerência</label>
-					<select
-						class="form-control"
-						id="selectGerencia"
-						v-model="gerencia"
-						@change="updateRoteiros"
-					>
-						<option value="" disabled selected>Selecione...</option>
-						<option
-							v-for="gerenciaItem in gerencias"
-							:key="gerenciaItem"
-							:value="gerenciaItem"
-						>
-							{{ gerenciaItem }}
-						</option>
-					</select>
-				</div>
-				<div class="form-group">
-					<label for="selectRoteiro">Roteiro</label>
-					<select
-						class="form-control"
-						id="selectRoteiro"
-						v-model="roteiro"
-						:disabled="!gerencia"
-					>
-						<option value="" disabled selected>Selecione...</option>
-						<option
-							v-for="roteiroItem in filteredRoteiros"
-							:key="roteiroItem"
-							:value="roteiroItem"
-						>
-							{{ roteiroItem }}
-						</option>
-					</select>
-				</div>
-				<div class="form-group">
-					<label for="selectLado">Lado</label>
-					<select class="form-control" id="selectLado" v-model="lado">
-						<option value="" disabled selected>Selecione...</option>
-						<option value="D">Lado Direito</option>
-						<option value="E">Lado Esquerdo</option>
-						<option value="ED" selected>Ambos</option>
-					</select>
-				</div>
-				<div class="form-group">
-					<div class="form-check" style="display: flex; align-items: center">
-						<input
-							class="form-check-input"
-							type="radio"
-							name="opcao"
-							value="deslocamento"
-							id="radioDeslocamento"
-							v-model="opcao"
-							:disabled="roteiro === null"
-						/>
-						<label
-							class="form-check-label"
-							for="radioDeslocamento"
-							id="first"
-							style="flex: 1; text-align: left"
-						>
-							Deslocamento
-						</label>
-						<div class="linha-tracejada-azul"></div>
-					</div>
-					<div class="form-check" style="display: flex; align-items: center">
-						<input
-							class="form-check-input"
-							type="radio"
-							name="opcao"
-							value="coleta"
-							id="radioColeta"
-							v-model="opcao"
-							:disabled="roteiro === null"
-						/>
-						<label
-							class="form-check-label"
-							for="radioColeta"
-							id="second"
-							style="flex: 1; text-align: left"
-						>
-							Coleta
-						</label>
-						<div class="linha-vermelha"></div>
-					</div>
-					<div class="form-check" style="display: flex; align-items: center">
-						<input
-							class="form-check-input"
-							type="radio"
-							name="opcao"
-							value="etr"
-							id="radiuoEtr"
-							v-model="opcao"
-							:disabled="roteiro === null"
-						/>
-						<label
-							class="form-check-label"
-							for="radioEtr"
-							id="third"
-							style="flex: 1; text-align: left"
-						>
-							ETR
-						</label>
-						<div class="linha-tracejada-verde"></div>
-					</div>
-				</div>
+  <head>
+    <title>Vue.js with Google Maps</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div id="map"></div>
+      <div class="popup container mt-5" :class="{show: isPopupVisible}">
+        <div class="form-group">
+          <label for="address">Endereço</label>
+          <input
+            type="text"
+            class="form-control"
+            id="address"
+            placeholder="Digite um endereço"
+          />
+        </div>
+        <div class="form-group">
+          <label for="selectGerencia">Gerência</label>
+          <select
+            class="form-control"
+            id="selectGerencia"
+            v-model="gerencia"
+            @change="updateRoteiros"
+          >
+            <option value="" disabled selected>Selecione...</option>
+            <option
+              v-for="gerenciaItem in gerencias"
+              :key="gerenciaItem"
+              :value="gerenciaItem"
+            >
+              {{ gerenciaItem }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="selectRoteiro">Roteiro</label>
+          <select
+            class="form-control"
+            id="selectRoteiro"
+            v-model="roteiro"
+            :disabled="!gerencia"
+            @change="buscarRoteiro"
+          >
+            <option value="" disabled selected>Selecione...</option>
+            <option
+              v-for="roteiroItem in filteredRoteiros"
+              :key="roteiroItem"
+              :value="roteiroItem"
+            >
+              {{ roteiroItem }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="selectLado">Lado</label>
+          <select class="form-control" id="selectLado" v-model="lado">
+            <option value="" disabled selected>Selecione...</option>
+            <option value="D">Lado Direito</option>
+            <option value="E">Lado Esquerdo</option>
+            <option value="ED" selected>Ambos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-check" style="display: flex; align-items: center">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="opcao"
+              value="deslocamento"
+              id="radioDeslocamento"
+              v-model="opcao"
+              :disabled="roteiro === null"
+            />
+            <label
+              class="form-check-label"
+              for="radioDeslocamento"
+              id="first"
+              style="flex: 1; text-align: left"
+            >
+              Deslocamento
+            </label>
+            <div class="linha-tracejada-azul"></div>
+          </div>
+          <div class="form-check" style="display: flex; align-items: center">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="opcao"
+              value="coleta"
+              id="radioColeta"
+              v-model="opcao"
+              :disabled="roteiro === null"
+            />
+            <label
+              class="form-check-label"
+              for="radioColeta"
+              id="second"
+              style="flex: 1; text-align: left"
+            >
+              Coleta
+            </label>
+            <div class="linha-vermelha"></div>
+          </div>
+          <div class="form-check" style="display: flex; align-items: center">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="opcao"
+              value="etr"
+              id="radiuoEtr"
+              v-model="opcao"
+              :disabled="roteiro === null"
+            />
+            <label
+              class="form-check-label"
+              for="radioEtr"
+              id="third"
+              style="flex: 1; text-align: left"
+            >
+              ETR
+            </label>
+            <div class="linha-tracejada-verde"></div>
+          </div>
+        </div>
 
-				<div v-if="opcao !== 'etr'">
-					<div class="form-group">
-						<div class="form-check" style="display: flex; align-items: center">
-							<input
-								class="form-check-input"
-								type="radio"
-								name="vetor"
-								value="partida"
-								id="radioPartida"
-								v-model="vetor"
-								:disabled="opcao === null"
-							/>
-							<label
-								class="form-check-label"
-								for="radioPartida"
-								id="first1"
-								style="flex: 1; text-align: left"
-							>
-								Partida
-							</label>
-							<div class="marcadorPartida"></div>
-						</div>
-						<div class="form-check" style="display: flex; align-items: center">
-							<input
-								class="form-check-input"
-								type="radio"
-								name="vetor"
-								value="chegada"
-								id="radioChegada"
-								v-model="vetor"
-								:disabled="local === null"
-							/>
-							<label
-								class="form-check-label"
-								for="radioChegada"
-								id="second2"
-								style="flex: 1; text-align: left"
-							>
-								Chegada
-							</label>
-							<div class="marcadorChegada"></div>
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="selectGerencia">Tipo</label>
-						<select
-							class="form-control"
-							id="selectTipo"
-							v-model="tipo"
-							:disabled="!vetor"
-							@change="updateLocais"
-						>
-							<option value="" disabled selected>Selecione...</option>
-							<option v-for="tipo in tipos" :key="tipo" :value="tipo">
-								{{ tipo }}
-							</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label for="selectGerencia">Local</label>
-						<select
-							class="form-control"
-							id="selectLocal"
-							v-model="local"
-							:disabled="!tipo"
-							@change="criarPontoInicial"
-						>
-							<option value="" disabled selected>Selecione...</option>
-							<option
-								v-for="item in filteredLocais"
-								:key="item.nome"
-								:value="item.nome"
-							>
-								{{ item.nome }}
-							</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label for="distanceDeslocamento">Deslocamento entre coletas</label>
-						<input
-							type="text"
-							class="form-control"
-							id="distanceDeslocamento"
-							:value="formatarDeslocamento"
-							disabled
-						/>
-					</div>
-					<div class="form-group">
-						<label for="distanceDeslocamento">Deslocamento ETR</label>
-						<input
-							type="text"
-							class="form-control"
-							id="distanceETR"
-							:value="formatarETR"
-							disabled
-						/>
-					</div>
-					<div class="form-group">
-						<label for="distanceColeta">Coleta</label>
-						<input
-							type="text"
-							class="form-control"
-							id="distanceColeta"
-							:value="formatarColeta"
-							disabled
-						/>
-					</div>
-					<div class="form-group">
-						<label for="distanceTotal">Total</label>
-						<input
-							type="text"
-							class="form-control"
-							id="distanceTotal"
-							:value="formatarDistanciaTotal"
-							disabled
-						/>
-					</div>
-					<div class="form-group row">
-						<div class="col">
-							<button class="btn btn-primary btn-block" @click="salvar">
-								Confirmar
-							</button>
-						</div>
-						<div class="col">
-							<button
-								class="btn btn-secondary btn-block"
-								id="btnExcluir"
-								@click="excluir"
-							>
-								Excluir
-							</button>
-						</div>
-					</div>
-				</div>
-				<div v-else="opcao === 'etr'">
-					<div class="form-group">
-						<label for="radioRetorno">Retornar para o mesmo local?</label>
-						<div class="form-check" style="display: flex; align-items: center">
-							<input
-								class="form-check-input"
-								type="radio"
-								name="retorno"
-								value="true"
-								id="radioRetorno"
-								v-model="retorno"
-							/>
-							<label
-								class="form-check-label"
-								for="radioRetorno"
-								id="first3"
-								style="flex: 1; text-align: left"
-							>
-								sim
-							</label>
-						</div>
-						<div class="form-check" style="display: flex; align-items: center">
-							<input
-								class="form-check-input"
-								type="radio"
-								name="retorno"
-								value="false"
-								id="radioRetorno"
-								v-model="retorno"
-							/>
-							<label
-								class="form-check-label"
-								for="radioRetorno"
-								id="first4"
-								style="flex: 1; text-align: left"
-							>
-								não
-							</label>
-						</div>
-					</div>
+        <div v-if="opcao !== 'etr'">
+          <div class="form-group">
+            <div class="form-check" style="display: flex; align-items: center">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="vetor"
+                value="partida"
+                id="radioPartida"
+                v-model="vetor"
+                :disabled="opcao === null"
+              />
+              <label
+                class="form-check-label"
+                for="radioPartida"
+                id="first1"
+                style="flex: 1; text-align: left"
+              >
+                Partida
+              </label>
+              <div class="marcadorPartida"></div>
+            </div>
+            <div class="form-check" style="display: flex; align-items: center">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="vetor"
+                value="chegada"
+                id="radioChegada"
+                v-model="vetor"
+                :disabled="local === null"
+              />
+              <label
+                class="form-check-label"
+                for="radioChegada"
+                id="second2"
+                style="flex: 1; text-align: left"
+              >
+                Chegada
+              </label>
+              <div class="marcadorChegada"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="selectGerencia">Tipo</label>
+            <select
+              class="form-control"
+              id="selectTipo"
+              v-model="tipo"
+              :disabled="!vetor"
+              @change="updateLocais"
+            >
+              <option value="" disabled selected>Selecione...</option>
+              <option v-for="tipo in tipos" :key="tipo" :value="tipo">
+                {{ tipo }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="selectGerencia">Local</label>
+            <select
+              class="form-control"
+              id="selectLocal"
+              v-model="local"
+              :disabled="!tipo"
+              @change="criarPontoInicial"
+            >
+              <option value="" disabled selected>Selecione...</option>
+              <option
+                v-for="item in filteredLocais"
+                :key="item.nome"
+                :value="item.nome"
+              >
+                {{ item.nome }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="distanceDeslocamento">Deslocamento entre coletas</label>
+            <input
+              type="text"
+              class="form-control"
+              id="distanceDeslocamento"
+              :value="formatarDeslocamento"
+              disabled
+            />
+          </div>
+          <div class="form-group">
+            <label for="distanceDeslocamento">Deslocamento ETR</label>
+            <input
+              type="text"
+              class="form-control"
+              id="distanceETR"
+              :value="formatarETR"
+              disabled
+            />
+          </div>
+          <div class="form-group">
+            <label for="distanceColeta">Coleta</label>
+            <input
+              type="text"
+              class="form-control"
+              id="distanceColeta"
+              :value="formatarColeta"
+              disabled
+            />
+          </div>
+          <div class="form-group">
+            <label for="distanceTotal">Total</label>
+            <input
+              type="text"
+              class="form-control"
+              id="distanceTotal"
+              :value="formatarDistanciaTotal"
+              disabled
+            />
+          </div>
+          <div class="form-group row">
+            <div class="col">
+              <button class="btn btn-primary btn-block" @click="salvar">
+                Confirmar
+              </button>
+            </div>
+            <div class="col">
+              <button
+                class="btn btn-secondary btn-block"
+                id="btnExcluir"
+                @click="excluir"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-else="opcao === 'etr'">
+          <div class="form-group">
+            <label for="radioRetorno">Retornar para o mesmo local?</label>
+            <div class="form-check" style="display: flex; align-items: center">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="retorno"
+                value="true"
+                id="radioRetorno"
+                v-model="retorno"
+              />
+              <label
+                class="form-check-label"
+                for="radioRetorno"
+                id="first3"
+                style="flex: 1; text-align: left"
+              >
+                sim
+              </label>
+            </div>
+            <div class="form-check" style="display: flex; align-items: center">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="retorno"
+                value="false"
+                id="radioRetorno"
+                v-model="retorno"
+              />
+              <label
+                class="form-check-label"
+                for="radioRetorno"
+                id="first4"
+                style="flex: 1; text-align: left"
+              >
+                não
+              </label>
+            </div>
+          </div>
 
-					<div class="form-group">
-						<label for="selectedETR"
-							>Estação de tratamento de resíduos (ETR)</label
-						>
-						<select
-							class="form-control"
-							id="selectedETR"
-							v-model="local"
-							@change="carregarMarcadorEtrs"
-						>
-							<option value="" disabled selected>Selecione...</option>
-							<option v-for="item in etrs" :key="item" :value="item">
-								{{ item }}
-							</option>
-						</select>
-					</div>
-				</div>
-			</div>
+          <div class="form-group">
+            <label for="selectedETR"
+              >Estação de tratamento de resíduos (ETR)</label
+            >
+            <select
+              class="form-control"
+              id="selectedETR"
+              v-model="local"
+              @change="carregarMarcadorEtrs"
+            >
+              <option value="" disabled selected>Selecione...</option>
+              <option v-for="item in etrs" :key="item" :value="item">
+                {{ item }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
 
-			<div class="container-fluid">
-				<table class="table table-bordered">
-					<thead>
-						<tr>
-							<th scope="col">#</th>
-							<th scope="col">Logradouros</th>
-							<th scope="col" class="text-center">
-								<button class="print-btn" @click="exportarTabelaParaExcel">
-									<i class="fas fa-print icon-hover"></i>
-								</button>
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="(polilinha, index) in polilinhas"
-							:key="polilinha.uid"
-							:class="{
+      <div class="container-fluid">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Logradouros</th>
+              <th scope="col" class="text-center">
+                <button class="print-btn" @click="exportarTabelaParaExcel">
+                  <i class="fas fa-print icon-hover"></i>
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(polilinha, index) in polilinhas"
+              :key="polilinha.uid"
+              :class="{
 						'text-primary': polilinha.opcao === 'deslocamento',
 						'text-danger': polilinha.opcao === 'coleta',
 						'text-success': polilinha.opcao !== 'deslocamento' && polilinha.opcao !== 'coleta'
 						}"
-						>
-							<th>{{ index + 1 }}</th>
-							<td>{{ polilinha.inicio }}</td>
-							<td>{{ polilinha.opcao }}</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		</div>
-		<script src="./script.js"></script>
-		<script
-			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtTyl_0cTzYe39SIdOmWSJ0rI-H3F_Os&callback=initMap&libraries=places,geometry"
-			async
-			defer
-		></script>
-	</body>
+            >
+              <th>{{ index + 1 }}</th>
+              <td>{{ polilinha.inicio }}</td>
+              <td>{{ polilinha.opcao }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script src="./script.js"></script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtTyl_0cTzYe39SIdOmWSJ0rI-H3F_Os&callback=initMap&libraries=places,geometry"
+      async
+      defer
+    ></script>
+  </body>
 </html>
