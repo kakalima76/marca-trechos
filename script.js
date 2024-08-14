@@ -185,9 +185,9 @@ const app = new Vue({
         }
 
         /*
-                Segunda coisa:
-                Se não existe uma polilinha após esse marcador inicial de PARTIDA esse marcador  pode ser removido
-                */
+          Segunda coisa:
+          Se não existe uma polilinha após esse marcador inicial de PARTIDA esse marcador  pode ser removido
+        */
 
         if (marker.id === "partida" && this.polilinhas.length === 0) {
           this.apagarMarcadorPartida(marker, overlay);
@@ -195,12 +195,16 @@ const app = new Vue({
         }
 
         /*
-                Terceira coisa: 
-                Para apagar a última polilinha, apagamos também a último trecho que concudia até ele
-                */
+          Terceira coisa: 
+          Para apagar a última polilinha, apagamos também a último trecho que conduzia até ele
+        */
 
         if (marker.id === "chegada") {
           this.apagarMarcadorChegada(marker, overlay);
+        }
+
+        if (marker.id === "etr") {
+          this.apagarMarcadorETR(marker, overlay);
         }
       });
 
@@ -219,6 +223,13 @@ const app = new Vue({
       }
     },
     apagarMarcadorChegada(marcadorChegada, overlay) {
+      console.log(this.segundoMarcador);
+
+      if (!!this.segundoMarcador) {
+        Swal.fire("Oops!", `Essa rota já foi finalizada`, "warning");
+        return;
+      }
+
       Swal.fire({
         title: "Aviso",
         text: "Esse marcador será apagado. Deseja continuar?",
@@ -233,8 +244,8 @@ const app = new Vue({
           overlay.setMap(null);
 
           /*
-                        Após remover a última polilinha, é necessário recarregar o mapa
-                    */
+            Após remover a última polilinha, é necessário recarregar o mapa
+          */
           this.initMap();
 
           /*
@@ -260,10 +271,10 @@ const app = new Vue({
           );
 
           /*
-                        Caso já exista uma polilinha, o inicio do próximo percurso será o final dessa polilinha restante.
-                        Caso não haja mais polilinhas, então o inicio será o do próprio marcador de partida.
-                        Caso não haja marcador de partida, será obrigatório criar um novo
-                    */
+            Caso já exista uma polilinha, o inicio do próximo percurso será o final dessa polilinha restante.
+            Caso não haja mais polilinhas, então o inicio será o do próprio marcador de partida.
+            Caso não haja marcador de partida, será obrigatório criar um novo
+          */
 
           if (this.polilinhas.length > 0) {
             const { polilinha } = this.polilinhas[this.polilinhas.length - 1];
@@ -308,6 +319,89 @@ const app = new Vue({
           this.local = null;
 
           Swal.fire("Feito!", "Marcador apagado.", "success");
+        }
+      });
+    },
+    apagarMarcadorETR(marcadorETR, overlay) {
+      console.log(this.segundoMarcador);
+
+      if (!!this.segundoMarcador) {
+        Swal.fire("Oops!", `Essa rota já foi finalizada`, "warning");
+        return;
+      }
+
+      Swal.fire({
+        title: "Aviso",
+        text: "Esse marcador será apagado. Deseja continuar?",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sim, faça isso!",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          marcadorETR.setMap(null);
+          overlay.setMap(null);
+
+          /*
+            Após remover a última polilinha, é necessário recarregar o mapa
+          */
+          this.initMap();
+
+          /*
+            Após remover o marcador de chegada, é necessário apagar a polilinha que traça a rota até ele.
+            Essa polilinha é a última da lista de polilinhas.
+          */
+
+          this.polilinhas.pop();
+          this.polilinhas.pop();
+
+          /*
+            Então duas coisas precisam acontecer:
+            1) O marcador de início precisa ser colocado de volta e a polilinha precisa ser recarregada.
+            2) Porém, o this.polilinha temn um ouvinte e caso ainda haja elementos na polilinha será renderizado automaticamente na view.
+            3) Vamos precisar então avaliar qual será o último ponto disponível em this.pontos para recomeçar a marcação dos trechos.
+           */
+
+          this.adicionarMarcador(
+            this.primeiroMarcador.latitude,
+            this.primeiroMarcador.longitude,
+            this.primeiroMarcador.nome,
+            this.primeiroMarcador.vetor
+          );
+
+          /*
+            Caso já exista uma polilinha, o inicio do próximo percurso será o final dessa polilinha restante.
+            Caso não haja mais polilinhas, então o inicio será o do próprio marcador de partida.
+            Caso não haja marcador de partida, será obrigatório criar um novo
+          */
+
+          if (this.polilinhas.length > 0) {
+            const { polilinha } = this.polilinhas[this.polilinhas.length - 1];
+            this.adicionarPonto(polilinha[polilinha.length - 1]);
+          } else {
+            const coordenadas = new google.maps.LatLng(
+              this.primeiroMarcador.latitude,
+              this.primeiroMarcador.longitude
+            );
+            this.adicionarPonto(coordenadas);
+          }
+
+          Swal.fire("Feito!", "Marcador apagado.", "success").then(() => {
+            const url = `${this.base}/marcadores/${this.gerencia}/${this.roteiro}`;
+
+            const config = {
+              url,
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            };
+
+            axios(config).catch((error) =>
+              Swal.fire("Erro", error.message, "error")
+            );
+          });
         }
       });
     },
@@ -466,6 +560,10 @@ const app = new Vue({
       };
     },
     criarPontoInicial() {
+      if (!this.local) {
+        return;
+      }
+
       const local = this.listaLocais.filter((item) => item.nome === this.local);
       const { latitude, longitude, nome } = local[0];
 
@@ -576,10 +674,6 @@ const app = new Vue({
       this.polilinhas.push(obj);
     },
     exportarTabelaParaExcel() {
-      if (!this.testarDadosDoFormulario()) {
-        return;
-      }
-
       const dados = this.polilinhas.map((polilinha, index) => ({
         "#": index + 1,
         Logradouros: polilinha.inicio,
@@ -994,7 +1088,6 @@ const app = new Vue({
         );
         data.gerencia = this.gerencia;
         data.roteiro = this.roteiro;
-        console.log(data);
 
         const config = {
           url,
@@ -1007,77 +1100,71 @@ const app = new Vue({
 
         try {
           response = await axios(config);
-          console.log(response.status);
         } catch (e) {
           Swal.fire("Erro no servidor", e.message, "error");
         }
 
         if (response.status === 200 || response.status === 201) {
-          Swal.fire("Sucesso", "Trechos salvos com sucesso", "success")
-            .then(async () => {
-              const { latitude, longitude, nome, vetor } =
-                this.primeiroMarcador;
-
-              const marcador = {
-                gerencia: this.gerencia,
-                roteiro: this.roteiro,
-                latitude,
-                longitude,
-                nome,
-                vetor,
-              };
-
-              const url = `${this.base}/marcadores`;
-
-              const config = {
-                url,
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                data: marcador,
-              };
-
-              await axios(config).catch((error) =>
-                Swal.fire("Erro", error.message, "error")
-              );
-            })
-            .then(async () => {
-              const { latitude, longitude, nome, vetor } = this.segundoMarcador;
-
-              const marcador = {
-                gerencia: this.gerencia,
-                roteiro: this.roteiro,
-                latitude,
-                longitude,
-                nome,
-                vetor,
-              };
-
-              const url = `${this.base}/marcadores`;
-
-              const config = {
-                url,
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                data: marcador,
-              };
-
-              await axios(config)
-                .then(() => {
-                  Swal.fire(
-                    "Sucesso",
-                    "Marcadores salvos com sucesso",
-                    "success"
-                  ).then(() => {
-                    location.reload();
-                  });
-                })
-                .catch((error) => Swal.fire("Erro", error.message, "error"));
-            });
         }
+      }
+
+      const { status } = response;
+      if (status === 200 || status === 201) {
+        Swal.fire("Sucesso", "Trechos salvos com sucesso", "success")
+          .then(async () => {
+            const { latitude, longitude, nome, vetor } = this.primeiroMarcador;
+
+            const marcador = {
+              gerencia: this.gerencia,
+              roteiro: this.roteiro,
+              latitude,
+              longitude,
+              nome,
+              vetor,
+            };
+
+            const url = `${this.base}/marcadores`;
+
+            const config = {
+              url,
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              data: marcador,
+            };
+
+            await axios(config).catch((error) =>
+              Swal.fire("Erro", error.message, "error")
+            );
+          })
+          .then(async () => {
+            const { latitude, longitude, nome, vetor } = this.segundoMarcador;
+
+            const marcador = {
+              gerencia: this.gerencia,
+              roteiro: this.roteiro,
+              latitude,
+              longitude,
+              nome,
+              vetor,
+            };
+
+            const url = `${this.base}/marcadores`;
+
+            const config = {
+              url,
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              data: marcador,
+            };
+
+            await axios(config)
+              .then(() => {})
+              .catch((error) => Swal.fire("Erro", error.message, "error"));
+          });
       }
     },
     testarDadosDoFormulario() {

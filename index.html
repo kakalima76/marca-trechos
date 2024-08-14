@@ -124,7 +124,7 @@
               value="etr"
               id="radiuoEtr"
               v-model="opcao"
-              :disabled="roteiro === null"
+              :disabled="roteiro === null || local === null"
             />
             <label
               class="form-check-label"
@@ -168,7 +168,7 @@
                 value="chegada"
                 id="radioChegada"
                 v-model="vetor"
-                :disabled="local === null"
+                :disabled="!local"
               />
               <label
                 class="form-check-label"
@@ -190,7 +190,7 @@
               :disabled="!vetor"
               @change="updateLocais"
             >
-              <option value="" disabled selected>Selecione...</option>
+              <option disabled selected>Selecione...</option>
               <option v-for="tipo in tipos" :key="tipo" :value="tipo">
                 {{ tipo }}
               </option>
@@ -205,7 +205,7 @@
               :disabled="!tipo"
               @change="criarPontoInicial"
             >
-              <option value="" disabled selected>Selecione...</option>
+              <option disabled selected>Selecione...</option>
               <option
                 v-for="item in filteredLocais"
                 :key="item.nome"
