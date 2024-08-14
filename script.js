@@ -320,7 +320,7 @@ const app = new Vue({
           if (status === 200 || status === 201) {
             data.forEach((d) => {
               const { latitude, longitude, nome, vetor } = d;
-              console.log(d);
+
               this.primeiroMarcador = d;
 
               this.adicionarMarcador(
@@ -347,6 +347,11 @@ const app = new Vue({
                   d.polilinha = this.decodificarOverwiewPolyline(d.polilinha);
                   this.polilinhas.push(d);
                 });
+
+                if (this.polilinhas.length > 0) {
+                  const latLng = this.polilinhas[0].polilinha[0];
+                  this.map.setCenter(latLng);
+                }
               }
             })
             .catch((error) =>
@@ -962,7 +967,7 @@ const app = new Vue({
       if (
         !this.primeiroMarcador ||
         !this.segundoMarcador ||
-        this.polilinha.lenght === 0
+        this.polilinha.length === 0
       ) {
         Swal.fire("Aviso", "Crie uma rota completa antes de salvar", "warning");
         return;
