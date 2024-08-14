@@ -40,6 +40,7 @@ const app = new Vue({
     segundoMarcador: null,
     marcadores: [],
     retorno: true,
+    showConfirmar: true,
   },
   mounted() {
     this.loadGerencias();
@@ -312,6 +313,8 @@ const app = new Vue({
     },
     buscarRoteiro() {
       const url = `${this.base}/marcadores/${this.gerencia}/${this.roteiro}`;
+      this.initMap();
+      this.resetarVariaveis();
 
       axios
         .get(url)
@@ -334,6 +337,10 @@ const app = new Vue({
                 ? (this.primeiroMarcador = d)
                 : (this.segundoMarcador = d);
             });
+
+            if (!!this.primeiroMarcador && !!this.segundoMarcador) {
+              this.showConfirmar = false;
+            }
           }
         })
         .then((data) => {
@@ -347,6 +354,8 @@ const app = new Vue({
                   d.polilinha = this.decodificarOverwiewPolyline(d.polilinha);
                   this.polilinhas.push(d);
                 });
+
+                this.polilinhas.sort((a, b) => a.uid - b.uid);
 
                 if (this.polilinhas.length > 0) {
                   const latLng = this.polilinhas[0].polilinha[0];
@@ -959,6 +968,12 @@ const app = new Vue({
         polyline.setMap(this.map);
         // polylineObj.polyline = polyline;
       });
+    },
+    resetarVariaveis() {
+      this.primeiroMarcador = null;
+      this.segundoMarcador = null;
+      this.polilinhas = [];
+      this.pontos = [];
     },
     async salvar() {
       const url = `${this.base}/coordenadas`;
