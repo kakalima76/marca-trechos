@@ -445,6 +445,22 @@ const app = new Vue({
               const { data, status } = response;
               if (status === 200 || status === 201) {
                 data.forEach((d) => {
+                  if (d.opcao == "deslocamento") {
+                    this.deslocamento = this.deslocamento + d.distancia;
+                  }
+
+                  if (d.opcao == "coleta") {
+                    this.coleta = this.coleta + d.distancia;
+                  }
+
+                  if (d.opcao == "etr") {
+                    this.etr = this.etr + d.distancia;
+                  }
+
+                  this.distanciaTotal =
+                    this.deslocamento + this.coleta + this.etr;
+                  this.distancia = d.distancia;
+
                   d.polilinha = this.decodificarOverwiewPolyline(d.polilinha);
                   this.polilinhas.push(d);
                 });
@@ -1068,6 +1084,10 @@ const app = new Vue({
       this.segundoMarcador = null;
       this.polilinhas = [];
       this.pontos = [];
+      this.deslocamento = 0;
+      this.coleta = 0;
+      this.distanciaTotal = 0;
+      this.etr = 0;
     },
     async salvar() {
       const url = `${this.base}/coordenadas`;

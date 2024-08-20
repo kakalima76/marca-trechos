@@ -1,5 +1,6 @@
-body, html {
-  height: 100%;
+body,
+html {
+  height: 100vh;
   margin: 0;
 }
 #app {
@@ -15,38 +16,38 @@ body, html {
   overflow-y: auto;
 }
 
- .popup {
- display: none;
- position: absolute;
- top: 10px;
- left: 10px;
- width: 300px;
- background: #fff;
- box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
- padding: 20px;
- border-radius: 5px;
- z-index: 10;
- max-height: 80vh; /* Define a altura máxima da div */
- overflow-y: auto;  /* Adiciona a rolagem vertical */
- }
- .show {
- display: block !important;
- }
- .custom-map-control-button {
- background-color: #d4f7d4;
- border: none;
- outline: none;
- width: 40px;
- height: 40px;
- border-radius: 2px;
- box-shadow: 0 2px 6px rgba(0,0,0,.3);
- cursor: pointer;
- margin-right: 10px;
- margin-top: 10px;
- }
- .custom-map-control-button:hover {
- background-color: #ebebeb;
- }
+.popup {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 300px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-radius: 5px;
+  z-index: 10;
+  max-height: 80vh; /* Define a altura máxima da div */
+  overflow-y: auto; /* Adiciona a rolagem vertical */
+}
+.show {
+  display: block !important;
+}
+.custom-map-control-button {
+  background-color: #d4f7d4;
+  border: none;
+  outline: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  margin-right: 10px;
+  margin-top: 10px;
+}
+.custom-map-control-button:hover {
+  background-color: #ebebeb;
+}
 
 .popup {
   width: 75%; /* Padrão para dispositivos pequenos */
@@ -98,7 +99,6 @@ body, html {
   }
 }
 
-
 .linha-tracejada-azul {
   border-top: 2px dashed blue;
   width: 50%;
@@ -117,22 +117,25 @@ body, html {
   margin-left: 10px;
 }
 
-.marcadorPartida, .marcadorChegada {
+.marcadorPartida,
+.marcadorChegada {
   height: 20px;
   width: 30%; /* Ocupa 30% da largura do elemento pai */
   background-repeat: no-repeat;
   background-position: left;
   background-size: contain;
   margin-left: 50%; /* Posiciona na metade do elemento pai */
-  transform: translateX(-50%); /* Move o elemento 50% para a esquerda para alinhar ao centro */
+  transform: translateX(
+    -50%
+  ); /* Move o elemento 50% para a esquerda para alinhar ao centro */
 }
 
 .marcadorPartida {
-  background-image: url('./partida.jpg');
+  background-image: url("./partida.jpg");
 }
 
 .marcadorChegada {
-  background-image: url('./chegada.jpg');
+  background-image: url("./chegada.jpg");
 }
 
 .print-btn {
@@ -150,9 +153,16 @@ body, html {
 }
 
 .print-btn:hover .icon-hover {
-  color: #00BFFF	; /* Altera a cor para vermelho no hover */
+  color: #00bfff; /* Altera a cor para vermelho no hover */
 }
 
 .print-btn:active .icon-hover {
   color: red; /* Altera a cor para vermelho ao clicar */
+}
+
+.scroll-view {
+  height: 40vh; /* 35% da altura da viewport */
+  overflow-y: scroll; /* Habilita o scroll vertical */
+  border: 1px solid #ccc; /* Opcional: Adiciona uma borda para visualização */
+  padding: 10px; /* Espaçamento interno */
 }
